@@ -13,22 +13,36 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const startCamera = async () => {
+    setError(null)
     try {
+      // Try user-facing camera first (works better on desktop)
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }, // Use back camera on mobile
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 1920 },
+          facingMode: 'user', // Front camera (works on desktop and mobile)
+        },
         audio: false,
       })
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
+
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play()
+        }
+
         setStream(mediaStream)
         setIsCameraActive(true)
       }
     } catch (err) {
       console.error('Error accessing camera:', err)
-      alert('Could not access camera. Please check permissions.')
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(`Camera error: ${errorMessage}. Please allow camera access in your browser.`)
     }
   }
 
@@ -44,6 +58,12 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current
       const canvas = canvasRef.current
+
+      // Make sure video is playing and has dimensions
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        setError('Camera not ready. Please wait a moment and try again.')
+        return
+      }
 
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
@@ -69,6 +89,7 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
 
   const retake = () => {
     setCapturedImage(null)
+    setError(null)
     startCamera()
   }
 
@@ -77,6 +98,12 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
   return (
     <div>
       <div className="mb-4">
+        {error && (
+          <div className="mb-4 border border-red-600 px-4 py-3 text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
         {!isCameraActive && !displayImage && (
           <div className="aspect-[3/4] border border-black flex items-center justify-center bg-gray-50">
             <button
@@ -95,7 +122,8 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
               ref={videoRef}
               autoPlay
               playsInline
-              className="w-full aspect-[3/4] object-cover border border-black"
+              muted
+              className="w-full aspect-[3/4] object-cover border border-black bg-black"
             />
             <div className="mt-4 flex gap-3">
               <button
