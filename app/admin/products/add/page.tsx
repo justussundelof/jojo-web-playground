@@ -83,23 +83,25 @@ export default function AddProductPage() {
         }
       }
 
-      // Create product
-      const { error: insertError } = await supabase.from('article').insert([
-        {
-          title: formData.title || null,
-          designer: formData.designer || null,
-          description: formData.description || null,
-          price: formData.price ? parseFloat(formData.price) : null,
-          category: formData.category || null,
-          tag: formData.tag || null,
-          size: formData.size || null,
-          width: formData.width || null,
-          height: formData.height || null,
-          in_stock: formData.in_stock,
-          for_sale: formData.for_sale,
-          img_url: imageUrl,
-        },
-      ])
+      // Create product - prepare data
+      const insertData: any = {
+        title: formData.title || null,
+        designer: formData.designer || null,
+        description: formData.description || null,
+        price: formData.price ? parseFloat(formData.price) : null,
+        width: formData.width || null,
+        height: formData.height || null,
+        in_stock: formData.in_stock,
+        for_sale: formData.for_sale,
+        img_url: imageUrl,
+      }
+
+      // Only include enum fields if they have values
+      if (formData.category) insertData.category = formData.category
+      if (formData.tag) insertData.tag = formData.tag
+      if (formData.size) insertData.size = formData.size
+
+      const { error: insertError } = await supabase.from('article').insert([insertData])
 
       if (insertError) {
         throw insertError
@@ -204,38 +206,49 @@ export default function AddProductPage() {
 
               <div>
                 <label className="block text-sm mb-2 opacity-60">CATEGORY</label>
-                <input
-                  type="text"
+                <select
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-black focus:outline-none"
-                  placeholder="Outerwear"
-                />
+                  className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
+                >
+                  <option value="">Select category</option>
+                  <option value="accessories">accessories</option>
+                  <option value="bags">bags</option>
+                  <option value="clothing">clothing</option>
+                  <option value="shoes">shoes</option>
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm mb-2 opacity-60">TAG</label>
-                <input
-                  type="text"
+                <select
                   name="tag"
                   value={formData.tag}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-black focus:outline-none"
-                  placeholder="Vintage"
-                />
+                  className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
+                >
+                  <option value="">Select tag</option>
+                  <option value="y2k">y2k</option>
+                  <option value="christmas">christmas</option>
+                  <option value="summer">summer</option>
+                  <option value="grunge">grunge</option>
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm mb-2 opacity-60">SIZE</label>
-                <input
-                  type="text"
+                <select
                   name="size"
                   value={formData.size}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-black focus:outline-none"
-                  placeholder="M"
-                />
+                  className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
+                >
+                  <option value="">Select size</option>
+                  <option value="s">S</option>
+                  <option value="m">M</option>
+                  <option value="l">L</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
