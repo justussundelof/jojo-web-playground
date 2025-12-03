@@ -14,24 +14,35 @@ export default function AddProductPage() {
 
   const [formData, setFormData] = useState({
     title: '',
+    designer: '',
     description: '',
     price: '',
     category: '',
+    tag: '',
     size: '',
-    color: '',
-    brand: '',
-    condition: '',
-    era: '',
-    stock_quantity: '1',
+    width: '',
+    height: '',
+    in_stock: true,
+    for_sale: true,
   })
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
+    const { name, value, type } = e.target
+
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked
+      setFormData((prev) => ({
+        ...prev,
+        [name]: checked,
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
   }
 
   const uploadImage = async (file: File): Promise<string | null> => {
@@ -75,16 +86,17 @@ export default function AddProductPage() {
       // Create product
       const { error: insertError } = await supabase.from('products').insert([
         {
-          title: formData.title,
-          description: formData.description,
-          price: parseFloat(formData.price),
-          category: formData.category,
-          size: formData.size,
-          color: formData.color,
-          brand: formData.brand || null,
-          condition: formData.condition || null,
-          era: formData.era || null,
-          stock_quantity: parseInt(formData.stock_quantity),
+          title: formData.title || null,
+          designer: formData.designer || null,
+          description: formData.description || null,
+          price: formData.price ? parseFloat(formData.price) : null,
+          category: formData.category || null,
+          tag: formData.tag || null,
+          size: formData.size || null,
+          width: formData.width || null,
+          height: formData.height || null,
+          in_stock: formData.in_stock,
+          for_sale: formData.for_sale,
           image_url: imageUrl,
         },
       ])
@@ -141,154 +153,139 @@ export default function AddProductPage() {
             {/* Form Section */}
             <div className="space-y-6">
               <div>
-                <label className="block text-sm mb-2 opacity-60">TITLE *</label>
+                <label className="block text-sm mb-2 opacity-60">TITLE</label>
                 <input
                   type="text"
                   name="title"
-                  required
                   value={formData.title}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-black focus:outline-none"
-                  placeholder="Vintage Levi's Jacket"
+                  placeholder="Vintage Leather Jacket"
                 />
               </div>
 
               <div>
-                <label className="block text-sm mb-2 opacity-60">DESCRIPTION *</label>
+                <label className="block text-sm mb-2 opacity-60">DESIGNER</label>
+                <input
+                  type="text"
+                  name="designer"
+                  value={formData.designer}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-black focus:outline-none"
+                  placeholder="Yohji Yamamoto"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-2 opacity-60">DESCRIPTION</label>
                 <textarea
                   name="description"
-                  required
                   value={formData.description}
                   onChange={handleChange}
                   rows={4}
                   className="w-full px-4 py-3 border border-black focus:outline-none resize-none"
-                  placeholder="Describe the product..."
+                  placeholder="About the article..."
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-2 opacity-60">PRICE *</label>
-                  <input
-                    type="number"
-                    name="price"
-                    required
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-black focus:outline-none"
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm mb-2 opacity-60">STOCK *</label>
-                  <input
-                    type="number"
-                    name="stock_quantity"
-                    required
-                    min="0"
-                    value={formData.stock_quantity}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-black focus:outline-none"
-                  />
-                </div>
-              </div>
-
               <div>
-                <label className="block text-sm mb-2 opacity-60">CATEGORY *</label>
-                <select
-                  name="category"
-                  required
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
-                >
-                  <option value="">Select category</option>
-                  <option value="Outerwear">Outerwear</option>
-                  <option value="Tops">Tops</option>
-                  <option value="Bottoms">Bottoms</option>
-                  <option value="Dresses">Dresses</option>
-                  <option value="Accessories">Accessories</option>
-                  <option value="Shoes">Shoes</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-2 opacity-60">SIZE *</label>
-                  <select
-                    name="size"
-                    required
-                    value={formData.size}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
-                  >
-                    <option value="">Select size</option>
-                    <option value="XS">XS</option>
-                    <option value="S">S</option>
-                    <option value="M">M</option>
-                    <option value="L">L</option>
-                    <option value="XL">XL</option>
-                    <option value="XXL">XXL</option>
-                    <option value="One Size">One Size</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm mb-2 opacity-60">COLOR *</label>
-                  <input
-                    type="text"
-                    name="color"
-                    required
-                    value={formData.color}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-black focus:outline-none"
-                    placeholder="Black"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm mb-2 opacity-60">BRAND</label>
+                <label className="block text-sm mb-2 opacity-60">PRICE</label>
                 <input
-                  type="text"
-                  name="brand"
-                  value={formData.brand}
+                  type="number"
+                  name="price"
+                  step="0.01"
+                  min="0"
+                  value={formData.price}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-black focus:outline-none"
-                  placeholder="Levi's"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-2 opacity-60">CATEGORY</label>
+                <input
+                  type="text"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-black focus:outline-none"
+                  placeholder="Outerwear"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-2 opacity-60">TAG</label>
+                <input
+                  type="text"
+                  name="tag"
+                  value={formData.tag}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-black focus:outline-none"
+                  placeholder="Vintage"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-2 opacity-60">SIZE</label>
+                <input
+                  type="text"
+                  name="size"
+                  value={formData.size}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-black focus:outline-none"
+                  placeholder="M"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm mb-2 opacity-60">CONDITION</label>
-                  <select
-                    name="condition"
-                    value={formData.condition}
+                  <label className="block text-sm mb-2 opacity-60">WIDTH (cm)</label>
+                  <input
+                    type="text"
+                    name="width"
+                    value={formData.width}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
-                  >
-                    <option value="">Select condition</option>
-                    <option value="Excellent">Excellent</option>
-                    <option value="Good">Good</option>
-                    <option value="Fair">Fair</option>
-                  </select>
+                    className="w-full px-4 py-3 border border-black focus:outline-none"
+                    placeholder="50"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm mb-2 opacity-60">ERA</label>
+                  <label className="block text-sm mb-2 opacity-60">HEIGHT (cm)</label>
                   <input
                     type="text"
-                    name="era"
-                    value={formData.era}
+                    name="height"
+                    value={formData.height}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-black focus:outline-none"
-                    placeholder="90s"
+                    placeholder="70"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="in_stock"
+                    checked={formData.in_stock}
+                    onChange={handleChange}
+                    className="w-4 h-4 border border-black"
+                  />
+                  <span className="text-sm">IN STOCK</span>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="for_sale"
+                    checked={formData.for_sale}
+                    onChange={handleChange}
+                    className="w-4 h-4 border border-black"
+                  />
+                  <span className="text-sm">FOR SALE</span>
+                </label>
               </div>
 
               <button

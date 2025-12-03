@@ -2,46 +2,30 @@
 
 ## 1. Supabase Database Setup
 
-### Create Products Table
+### Products Table Fields
 
-In your Supabase SQL Editor, run:
+Your products table should have these fields:
+- `id` (bigint)
+- `created_at` (timestamp with time zone)
+- `title` (text)
+- `designer` (text)
+- `size` (user-defined enum)
+- `width` (text) - width of article in cm
+- `height` (text) - height of article in cm
+- `description` (text)
+- `category` (user-defined enum)
+- `tag` (user-defined enum)
+- `price` (numeric)
+- `in_stock` (boolean)
+- `for_sale` (boolean)
+- `image_url` (text) - **Add this column if it doesn't exist**
+
+### Add image_url column (if needed)
+
+If your table doesn't have the `image_url` column yet, run:
 
 ```sql
--- Create products table
-CREATE TABLE products (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  description TEXT NOT NULL,
-  price DECIMAL(10, 2) NOT NULL CHECK (price > 0),
-  category VARCHAR(100) NOT NULL,
-  size VARCHAR(50) NOT NULL,
-  color VARCHAR(100) NOT NULL,
-  brand VARCHAR(100),
-  condition VARCHAR(50),
-  era VARCHAR(50),
-  stock_quantity INTEGER NOT NULL DEFAULT 1 CHECK (stock_quantity >= 0),
-  image_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create indexes
-CREATE INDEX idx_products_category ON products(category);
-CREATE INDEX idx_products_created_at ON products(created_at DESC);
-
--- Auto-update updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_products_updated_at
-  BEFORE UPDATE ON products
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+ALTER TABLE products ADD COLUMN image_url TEXT;
 ```
 
 ### Enable Row Level Security

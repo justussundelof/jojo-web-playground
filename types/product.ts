@@ -1,30 +1,31 @@
 export interface Product {
-  id?: string
-  title: string
-  description: string
-  price: number
-  category: string
-  size: string
-  color: string
-  brand?: string
-  condition?: string
-  era?: string
-  stock_quantity: number
-  image_url?: string
+  id?: number
   created_at?: string
-  updated_at?: string
+  title?: string
+  designer?: string
+  size?: string
+  width?: string
+  height?: string
+  description?: string
+  category?: string
+  tag?: string
+  price?: number
+  in_stock?: boolean
+  for_sale?: boolean
+  image_url?: string
 }
 
 export interface CreateProductRequest {
-  title: string
-  description: string
-  price: number
-  category: string
-  size: string
-  color: string
-  brand?: string
-  condition?: string
-  era?: string
-  stock_quantity: number
+  title?: string
+  designer?: string
+  size?: string
+  width?: string
+  height?: string
+  description?: string
+  category?: string
+  tag?: string
+  price?: number
+  in_stock?: boolean
+  for_sale?: boolean
   image_url?: string
 }
