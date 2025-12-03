@@ -206,38 +206,49 @@ export default function AddProductPage() {
 
               <div>
                 <label className="block text-sm mb-2 opacity-60">CATEGORY</label>
-                <input
-                  type="text"
+                <select
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-black focus:outline-none"
-                  placeholder="Outerwear"
-                />
+                  className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
+                >
+                  <option value="">Select category</option>
+                  <option value="accessories">accessories</option>
+                  <option value="bags">bags</option>
+                  <option value="clothing">clothing</option>
+                  <option value="shoes">shoes</option>
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm mb-2 opacity-60">TAG</label>
-                <input
-                  type="text"
+                <select
                   name="tag"
                   value={formData.tag}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-black focus:outline-none"
-                  placeholder="Vintage"
-                />
+                  className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
+                >
+                  <option value="">Select tag</option>
+                  <option value="y2k">y2k</option>
+                  <option value="christmas">christmas</option>
+                  <option value="summer">summer</option>
+                  <option value="grunge">grunge</option>
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm mb-2 opacity-60">SIZE</label>
-                <input
-                  type="text"
+                <select
                   name="size"
                   value={formData.size}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-black focus:outline-none"
-                  placeholder="M"
-                />
+                  className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
+                >
+                  <option value="">Select size</option>
+                  <option value="s">S</option>
+                  <option value="m">M</option>
+                  <option value="l">L</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
