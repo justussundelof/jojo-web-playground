@@ -83,23 +83,25 @@ export default function AddProductPage() {
         }
       }
 
-      // Create product
-      const { error: insertError } = await supabase.from('article').insert([
-        {
-          title: formData.title || null,
-          designer: formData.designer || null,
-          description: formData.description || null,
-          price: formData.price ? parseFloat(formData.price) : null,
-          category: formData.category || null,
-          tag: formData.tag || null,
-          size: formData.size || null,
-          width: formData.width || null,
-          height: formData.height || null,
-          in_stock: formData.in_stock,
-          for_sale: formData.for_sale,
-          img_url: imageUrl,
-        },
-      ])
+      // Create product - prepare data
+      const insertData: any = {
+        title: formData.title || null,
+        designer: formData.designer || null,
+        description: formData.description || null,
+        price: formData.price ? parseFloat(formData.price) : null,
+        width: formData.width || null,
+        height: formData.height || null,
+        in_stock: formData.in_stock,
+        for_sale: formData.for_sale,
+        img_url: imageUrl,
+      }
+
+      // Only include enum fields if they have values
+      if (formData.category) insertData.category = formData.category
+      if (formData.tag) insertData.tag = formData.tag
+      if (formData.size) insertData.size = formData.size
+
+      const { error: insertError } = await supabase.from('article').insert([insertData])
 
       if (insertError) {
         throw insertError
