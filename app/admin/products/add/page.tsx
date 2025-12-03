@@ -97,7 +97,7 @@ export default function AddProductPage() {
           height: formData.height || null,
           in_stock: formData.in_stock,
           for_sale: formData.for_sale,
-          image_url: imageUrl,
+          img_url: imageUrl,
         },
       ])
 

@@ -68,10 +68,10 @@ export default async function ProductsPage() {
                 href={`/admin/products/${product.id}`}
                 className="group"
               >
-                {product.image_url ? (
+                {product.img_url ? (
                   <div className="aspect-[3/4] bg-gray-100 mb-3 overflow-hidden">
                     <img
-                      src={product.image_url}
+                      src={product.img_url}
                       alt={product.title}
                       className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
                     />
