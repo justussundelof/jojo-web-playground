@@ -12,7 +12,7 @@ export interface Product {
   price?: number
   in_stock?: boolean
   for_sale?: boolean
-  image_url?: string
+  img_url?: string
 }
 
 export interface CreateProductRequest {
@@ -27,5 +27,5 @@ export interface CreateProductRequest {
   price?: number
   in_stock?: boolean
   for_sale?: boolean
-  image_url?: string
+  img_url?: string
 }
