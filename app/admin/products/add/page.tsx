@@ -37,7 +37,7 @@ export default function AddProductPage() {
   const uploadImage = async (file: File): Promise<string | null> => {
     const supabase = createClient()
     const fileName = `product-${Date.now()}.jpg`
-    const filePath = `products/${fileName}`
+    const filePath = `shop/products/${fileName}`
 
     const { error: uploadError } = await supabase.storage
       .from('jojo-media')

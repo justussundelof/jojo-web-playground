@@ -111,3 +111,16 @@ Navigate to `http://localhost:3000/login` and use your admin credentials.
 - `/admin` - Dashboard
 - `/admin/products` - View all products
 - `/admin/products/add` - Add new product with camera
+
+## Storage Structure
+
+Images are stored in Supabase Storage:
+
+```
+jojo-media/
+└── shop/
+    └── products/
+        ├── product-1701234567890.jpg
+        ├── product-1701234598234.jpg
+        └── ...
+```
