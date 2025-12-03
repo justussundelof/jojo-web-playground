@@ -1,4 +1,4 @@
-export interface Article {
+export interface Product {
   id?: string
   title: string
   description: string
@@ -6,25 +6,25 @@ export interface Article {
   category: string
   size: string
   color: string
-  material?: string
   brand?: string
+  condition?: string
+  era?: string
   stock_quantity: number
   image_url?: string
-  is_featured?: boolean
   created_at?: string
   updated_at?: string
 }
 
-export interface CreateArticleRequest {
+export interface CreateProductRequest {
   title: string
   description: string
   price: number
   category: string
   size: string
   color: string
-  material?: string
   brand?: string
+  condition?: string
+  era?: string
   stock_quantity: number
   image_url?: string
-  is_featured?: boolean
 }
