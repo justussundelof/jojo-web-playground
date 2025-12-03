@@ -84,7 +84,7 @@ export default function AddProductPage() {
       }
 
       // Create product
-      const { error: insertError } = await supabase.from('products').insert([
+      const { error: insertError } = await supabase.from('article').insert([
         {
           title: formData.title || null,
           designer: formData.designer || null,
