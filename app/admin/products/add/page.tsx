@@ -46,24 +46,47 @@ export default function AddProductPage() {
   }
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const supabase = createClient()
-    const fileName = `product-${Date.now()}.jpg`
-    const filePath = `shop/products/${fileName}`
+    try {
+      // Get signature from our API
+      const signResponse = await fetch('/api/cloudinary/sign', {
+        method: 'POST',
+      })
 
-    const { error: uploadError } = await supabase.storage
-      .from('jojo-media')
-      .upload(filePath, file)
+      if (!signResponse.ok) {
+        throw new Error('Failed to get upload signature')
+      }
 
-    if (uploadError) {
-      console.error('Upload error:', uploadError)
+      const { signature, timestamp, cloudName, apiKey, folder } = await signResponse.json()
+
+      // Prepare form data for Cloudinary
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp.toString())
+      formData.append('api_key', apiKey)
+      formData.append('folder', folder)
+
+      // Upload to Cloudinary
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      )
+
+      if (!uploadResponse.ok) {
+        throw new Error('Upload to Cloudinary failed')
+      }
+
+      const data = await uploadResponse.json()
+
+      // Return the secure URL
+      return data.secure_url
+    } catch (error) {
+      console.error('Upload error:', error)
       return null
     }
-
-    const { data } = supabase.storage
-      .from('jojo-media')
-      .getPublicUrl(filePath)
-
-    return data.publicUrl
   }
 
   const handleSubmit = async (e: FormEvent) => {
