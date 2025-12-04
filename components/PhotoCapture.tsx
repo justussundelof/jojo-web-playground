@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 
 interface PhotoCaptureProps {
   onPhotoCapture: (file: File) => void
@@ -9,21 +9,32 @@ interface PhotoCaptureProps {
 
 export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
+  const captureCanvasRef = useRef<HTMLCanvasElement>(null)
+
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('environment')
+  const [flash, setFlash] = useState(false)
+  const [photoIndex, setPhotoIndex] = useState(() => {
+    // Load counter from localStorage
+    if (typeof window !== 'undefined') {
+      return parseInt(localStorage.getItem('photoIndex') || '1', 10)
+    }
+    return 1
+  })
 
-  const startCamera = async () => {
+  // Start camera
+  const startCamera = async (facing: 'user' | 'environment' = cameraFacing) => {
     setError(null)
     try {
-      // Try user-facing camera first (works better on desktop)
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 1920 },
-          facingMode: 'user', // Front camera (works on desktop and mobile)
+          facingMode: facing,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
         },
         audio: false,
       })
@@ -42,10 +53,11 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
     } catch (err) {
       console.error('Error accessing camera:', err)
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      setError(`Camera error: ${errorMessage}. Please allow camera access in your browser.`)
+      setError(`Camera error: ${errorMessage}. Please allow camera access.`)
     }
   }
 
+  // Stop camera
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop())
@@ -54,39 +66,126 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
     }
   }
 
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current
-      const canvas = canvasRef.current
+  // Switch camera
+  const switchCamera = async () => {
+    const newFacing = cameraFacing === 'user' ? 'environment' : 'user'
+    setCameraFacing(newFacing)
 
-      // Make sure video is playing and has dimensions
-      if (video.videoWidth === 0 || video.videoHeight === 0) {
-        setError('Camera not ready. Please wait a moment and try again.')
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop())
+    }
+
+    await startCamera(newFacing)
+  }
+
+  // Live overlay rendering
+  useEffect(() => {
+    if (!isCameraActive) return
+
+    let animationFrame: number
+
+    const renderOverlay = () => {
+      const canvas = overlayCanvasRef.current
+      const video = videoRef.current
+
+      if (!canvas || !video || video.videoWidth === 0) {
+        animationFrame = requestAnimationFrame(renderOverlay)
         return
       }
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
 
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
 
-      const context = canvas.getContext('2d')
-      if (context) {
-        context.drawImage(video, 0, 0)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], `product-${Date.now()}.jpg`, {
-              type: 'image/jpeg',
-            })
-            const imageUrl = URL.createObjectURL(blob)
-            setCapturedImage(imageUrl)
-            onPhotoCapture(file)
-            stopCamera()
-          }
-        }, 'image/jpeg', 0.9)
-      }
+      // Timestamp
+      const timestamp = new Date().toLocaleString()
+      ctx.font = `${canvas.width * 0.035}px Sans-Serif`
+      ctx.fillStyle = 'white'
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'bottom'
+      ctx.shadowColor = 'rgba(0,0,0,0.7)'
+      ctx.shadowBlur = 4
+      ctx.fillText(timestamp, canvas.width - 20, canvas.height - 20)
+
+      // Counter (JOJOxxxx)
+      const indexString = String(photoIndex).padStart(4, '0')
+      ctx.textAlign = 'left'
+      ctx.fillText(`JOJO${indexString}`, 20, canvas.height - 20)
+
+      animationFrame = requestAnimationFrame(renderOverlay)
     }
+
+    renderOverlay()
+    return () => cancelAnimationFrame(animationFrame)
+  }, [isCameraActive, photoIndex])
+
+  // Capture photo
+  const capturePhoto = () => {
+    if (!videoRef.current || !captureCanvasRef.current) return
+
+    const video = videoRef.current
+    const canvas = captureCanvasRef.current
+
+    // Make sure video is ready
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      setError('Camera not ready. Please wait a moment and try again.')
+      return
+    }
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+
+    // Flash effect
+    setFlash(true)
+    setTimeout(() => setFlash(false), 150)
+
+    // Draw video frame
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+    // Timestamp
+    const timestamp = new Date().toLocaleString()
+    ctx.font = `${canvas.width * 0.035}px Sans-Serif`
+    ctx.fillStyle = 'white'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'bottom'
+    ctx.shadowColor = 'rgba(0,0,0,0.7)'
+    ctx.shadowBlur = 4
+    ctx.fillText(timestamp, canvas.width - 20, canvas.height - 20)
+
+    // Counter (JOJOxxxx)
+    const indexString = String(photoIndex).padStart(4, '0')
+    ctx.textAlign = 'left'
+    ctx.fillText(`JOJO${indexString}`, 20, canvas.height - 20)
+
+    // Convert to blob and create file
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], `JOJO${indexString}-${Date.now()}.jpg`, {
+          type: 'image/jpeg',
+        })
+        const imageUrl = URL.createObjectURL(blob)
+        setCapturedImage(imageUrl)
+        onPhotoCapture(file)
+        stopCamera()
+
+        // Increment and save counter
+        const newIndex = photoIndex + 1
+        setPhotoIndex(newIndex)
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('photoIndex', String(newIndex))
+        }
+      }
+    }, 'image/jpeg', 0.95)
   }
 
+  // Retake photo
   const retake = () => {
     setCapturedImage(null)
     setError(null)
@@ -97,18 +196,25 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
 
   return (
     <div>
+      {/* Flash effect */}
+      {flash && (
+        <div className="fixed inset-0 bg-white opacity-90 pointer-events-none z-50" />
+      )}
+
       <div className="mb-4">
+        {/* Error message */}
         {error && (
           <div className="mb-4 border border-red-600 px-4 py-3 text-red-600 text-sm">
             {error}
           </div>
         )}
 
+        {/* Initial state - Take photo button */}
         {!isCameraActive && !displayImage && (
           <div className="aspect-[3/4] border border-black flex items-center justify-center bg-gray-50">
             <button
               type="button"
-              onClick={startCamera}
+              onClick={() => startCamera()}
               className="px-6 py-3 border border-black hover:bg-black hover:text-white transition-colors"
             >
               TAKE PHOTO
@@ -116,8 +222,10 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
           </div>
         )}
 
+        {/* Camera active - Show video with overlay */}
         {isCameraActive && (
           <div className="relative">
+            {/* Video */}
             <video
               ref={videoRef}
               autoPlay
@@ -125,6 +233,23 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
               muted
               className="w-full aspect-[3/4] object-cover border border-black bg-black"
             />
+
+            {/* Live overlay */}
+            <canvas
+              ref={overlayCanvasRef}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+            />
+
+            {/* Camera switch button */}
+            <button
+              type="button"
+              onClick={switchCamera}
+              className="absolute top-4 right-4 px-3 py-2 bg-black/70 text-white text-xs hover:bg-black transition-colors"
+            >
+              SWITCH
+            </button>
+
+            {/* Capture controls */}
             <div className="mt-4 flex gap-3">
               <button
                 type="button"
@@ -144,6 +269,7 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
           </div>
         )}
 
+        {/* Captured image preview */}
         {displayImage && !isCameraActive && (
           <div>
             <img
@@ -162,7 +288,8 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
         )}
       </div>
 
-      <canvas ref={canvasRef} className="hidden" />
+      {/* Hidden canvas for capture */}
+      <canvas ref={captureCanvasRef} className="hidden" />
     </div>
   )
 }
