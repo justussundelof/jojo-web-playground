@@ -29,6 +29,10 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
   // Start camera
   const startCamera = async (facing: 'user' | 'environment' = cameraFacing) => {
     setError(null)
+
+    // Set camera active FIRST so video element renders
+    setIsCameraActive(true)
+
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -39,32 +43,37 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
         audio: false,
       })
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-        setStream(mediaStream)
-        setIsCameraActive(true)
+      setStream(mediaStream)
 
-        // Force play when metadata loads
-        videoRef.current.onloadedmetadata = () => {
-          if (videoRef.current) {
-            videoRef.current.play().catch(err => {
-              console.error('Error playing video:', err)
-              setError('Could not start video preview. Try again.')
-            })
+      // Wait a bit for React to render the video element
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream
+
+          // Force play when metadata loads
+          videoRef.current.onloadedmetadata = () => {
+            if (videoRef.current) {
+              videoRef.current.play().catch(err => {
+                console.error('Error playing video:', err)
+                setError('Could not start video preview. Try again.')
+              })
+            }
           }
-        }
 
-        // Also try to play immediately
-        try {
-          await videoRef.current.play()
-        } catch (err) {
-          console.log('Video play will start after metadata loads')
+          // Also try to play immediately
+          videoRef.current.play().catch(err => {
+            console.log('Video play will start after metadata loads')
+          })
+        } else {
+          console.error('Video ref is still null after timeout')
+          setError('Video element not found. Please try again.')
         }
-      }
+      }, 100)
     } catch (err) {
       console.error('Error accessing camera:', err)
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(`Camera error: ${errorMessage}. Please allow camera access.`)
+      setIsCameraActive(false)
     }
   }
 
