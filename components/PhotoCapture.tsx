@@ -41,14 +41,25 @@ export default function PhotoCapture({ onPhotoCapture, currentImage }: PhotoCapt
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
-
-        // Wait for video to be ready
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play()
-        }
-
         setStream(mediaStream)
         setIsCameraActive(true)
+
+        // Force play when metadata loads
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(err => {
+              console.error('Error playing video:', err)
+              setError('Could not start video preview. Try again.')
+            })
+          }
+        }
+
+        // Also try to play immediately
+        try {
+          await videoRef.current.play()
+        } catch (err) {
+          console.log('Video play will start after metadata loads')
+        }
       }
     } catch (err) {
       console.error('Error accessing camera:', err)
