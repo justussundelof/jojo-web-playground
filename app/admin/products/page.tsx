@@ -14,9 +14,15 @@ export default async function ProductsPage() {
     redirect('/login')
   }
 
+  // Fetch products with joined category, tag, and size data
   const { data: products } = await supabase
     .from('article')
-    .select('*')
+    .select(`
+      *,
+      category:categories!article_category_id_fkey(id, name, slug, parent_id),
+      tag:tags!article_tag_id_fkey(id, name, slug),
+      size:sizes!article_size_id_fkey(id, name, slug)
+    `)
     .order('created_at', { ascending: false })
 
   return (
@@ -81,9 +87,29 @@ export default async function ProductsPage() {
                     <span className="text-sm opacity-40">No image</span>
                   </div>
                 )}
-                <div className="text-sm">
-                  <div className="mb-1">{product.title}</div>
+                <div className="text-sm space-y-1">
+                  <div className="font-medium">{product.title}</div>
+                  {product.designer && (
+                    <div className="opacity-60 text-xs">{product.designer}</div>
+                  )}
                   <div className="opacity-60">${product.price}</div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {product.category && (
+                      <span className="text-xs border border-black px-2 py-0.5">
+                        {product.category.name}
+                      </span>
+                    )}
+                    {product.size && (
+                      <span className="text-xs border border-black px-2 py-0.5">
+                        {product.size.name}
+                      </span>
+                    )}
+                    {product.tag && (
+                      <span className="text-xs border border-black px-2 py-0.5 opacity-60">
+                        {product.tag.name}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Link>
             ))}
