@@ -19,9 +19,9 @@ export default async function ProductsPage() {
     .from('article')
     .select(`
       *,
-      category:categories!article_category_id_fkey(id, name, slug, parent_id),
-      tag:tags!article_tag_id_fkey(id, name, slug),
-      size:sizes!article_size_id_fkey(id, name, slug)
+      category:categories!fk_article_category(id, name, slug, parent_id),
+      tag:tags!fk_article_tag(id, name, slug),
+      size:sizes!fk_article_size(id, name, slug)
     `)
     .order('created_at', { ascending: false })
 
