@@ -78,7 +78,7 @@ export default async function ProductsPage() {
                   <div className="aspect-[3/4] bg-gray-100 mb-3 overflow-hidden">
                     <img
                       src={product.img_url}
-                      alt={product.title}
+                      alt={product.title || 'Product image'}
                       className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
                     />
                   </div>
