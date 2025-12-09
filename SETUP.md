@@ -70,14 +70,33 @@ Your `jojo-media` bucket should already be created with:
 - ✅ Public read access (anon role, SELECT)
 - ✅ Authenticated upload access (authenticated role, INSERT)
 
-## 4. Environment Variables
+## 4. Cloudinary Setup
 
-Make sure your `.env.local` has:
+### Create Cloudinary Account
+
+1. Go to [cloudinary.com](https://cloudinary.com) and sign up (free tier: 25GB storage)
+2. Go to your **Dashboard**
+3. Copy these values:
+   - **Cloud name** (e.g., `dxyz123abc`)
+   - **API Key** (e.g., `123456789012345`)
+   - **API Secret** (e.g., `abcdefghijk123456789`)
+
+### Configure Environment Variables
+
+Add to your `.env.local`:
 
 ```env
+# Supabase (for database)
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Cloudinary (for image storage)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 ```
+
+**Also add these to Vercel** (Settings → Environment Variables)
 
 ## 5. Run the App
 
@@ -96,15 +115,20 @@ Navigate to `http://localhost:3000/login` and use your admin credentials.
 - `/admin/products` - View all products
 - `/admin/products/add` - Add new product with camera
 
-## Storage Structure
+## Image Storage
 
-Images are stored in Supabase Storage:
+Images are stored in **Cloudinary** with signed uploads (secure):
 
 ```
-jojo-media/
-└── shop/
+Cloudinary/
+└── jojo-shop/
     └── products/
-        ├── product-1701234567890.jpg
-        ├── product-1701234598234.jpg
+        ├── JOJO0001-1701234567890.jpg
+        ├── JOJO0002-1701234598234.jpg
         └── ...
 ```
+
+**Why Cloudinary?**
+- 25GB free storage (vs Supabase 1GB)
+- Automatic optimization & CDN
+- Secure signed uploads (authenticated only)

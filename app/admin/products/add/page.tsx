@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import PhotoCapture from '@/components/PhotoCapture'
 import Link from 'next/link'
+import type { Category, Tag, Size } from '@/types/database'
 
 export default function AddProductPage() {
   const router = useRouter()
@@ -12,19 +13,81 @@ export default function AddProductPage() {
   const [error, setError] = useState<string | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
 
+  // Fetched data from database
+  const [genders, setGenders] = useState<Category[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [tags, setTags] = useState<Tag[]>([])
+  const [sizes, setSizes] = useState<Size[]>([])
+  const [selectedGender, setSelectedGender] = useState<string>('')
+
   const [formData, setFormData] = useState({
     title: '',
     designer: '',
     description: '',
     price: '',
-    category: '',
-    tag: '',
-    size: '',
+    category_id: '',
+    tag_id: '',
+    size_id: '',
     width: '',
     height: '',
     in_stock: true,
     for_sale: true,
   })
+
+  // Fetch categories, tags, and sizes on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createClient()
+
+      // Fetch top-level categories (genders)
+      const { data: genderData } = await supabase
+        .from('categories')
+        .select('*')
+        .is('parent_id', null)
+        .order('name')
+
+      if (genderData) setGenders(genderData)
+
+      // Fetch tags
+      const { data: tagData } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name')
+
+      if (tagData) setTags(tagData)
+
+      // Fetch sizes
+      const { data: sizeData } = await supabase
+        .from('sizes')
+        .select('*')
+        .order('sort_order')
+
+      if (sizeData) setSizes(sizeData)
+    }
+
+    fetchData()
+  }, [])
+
+  // Fetch subcategories when gender changes
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (!selectedGender) {
+        setCategories([])
+        return
+      }
+
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('parent_id', selectedGender)
+        .order('name')
+
+      if (data) setCategories(data)
+    }
+
+    fetchSubcategories()
+  }, [selectedGender])
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -45,25 +108,57 @@ export default function AddProductPage() {
     }
   }
 
+  const handleGenderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedGender(e.target.value)
+    // Reset category when gender changes
+    setFormData((prev) => ({
+      ...prev,
+      category_id: '',
+    }))
+  }
+
   const uploadImage = async (file: File): Promise<string | null> => {
-    const supabase = createClient()
-    const fileName = `product-${Date.now()}.jpg`
-    const filePath = `shop/products/${fileName}`
+    try {
+      // Get signature from our API
+      const signResponse = await fetch('/api/cloudinary/sign', {
+        method: 'POST',
+      })
 
-    const { error: uploadError } = await supabase.storage
-      .from('jojo-media')
-      .upload(filePath, file)
+      if (!signResponse.ok) {
+        throw new Error('Failed to get upload signature')
+      }
 
-    if (uploadError) {
-      console.error('Upload error:', uploadError)
+      const { signature, timestamp, cloudName, apiKey, folder } = await signResponse.json()
+
+      // Prepare form data for Cloudinary
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp.toString())
+      formData.append('api_key', apiKey)
+      formData.append('folder', folder)
+
+      // Upload to Cloudinary
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      )
+
+      if (!uploadResponse.ok) {
+        throw new Error('Upload to Cloudinary failed')
+      }
+
+      const data = await uploadResponse.json()
+
+      // Return the secure URL
+      return data.secure_url
+    } catch (error) {
+      console.error('Upload error:', error)
       return null
     }
-
-    const { data } = supabase.storage
-      .from('jojo-media')
-      .getPublicUrl(filePath)
-
-    return data.publicUrl
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -96,10 +191,10 @@ export default function AddProductPage() {
         img_url: imageUrl,
       }
 
-      // Only include enum fields if they have values
-      if (formData.category) insertData.category = formData.category
-      if (formData.tag) insertData.tag = formData.tag
-      if (formData.size) insertData.size = formData.size
+      // Only include foreign key fields if they have values
+      if (formData.category_id) insertData.category_id = parseInt(formData.category_id)
+      if (formData.tag_id) insertData.tag_id = parseInt(formData.tag_id)
+      if (formData.size_id) insertData.size_id = parseInt(formData.size_id)
 
       const { error: insertError } = await supabase.from('article').insert([insertData])
 
@@ -205,49 +300,70 @@ export default function AddProductPage() {
               </div>
 
               <div>
-                <label className="block text-sm mb-2 opacity-60">CATEGORY</label>
+                <label className="block text-sm mb-2 opacity-60">GENDER</label>
                 <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
+                  value={selectedGender}
+                  onChange={handleGenderChange}
                   className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
                 >
+                  <option value="">Select gender</option>
+                  {genders.map((gender) => (
+                    <option key={gender.id} value={gender.id}>
+                      {gender.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm mb-2 opacity-60">CATEGORY</label>
+                <select
+                  name="category_id"
+                  value={formData.category_id}
+                  onChange={handleChange}
+                  disabled={!selectedGender}
+                  className="w-full px-4 py-3 border border-black focus:outline-none bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <option value="">Select category</option>
-                  <option value="accessories">accessories</option>
-                  <option value="bags">bags</option>
-                  <option value="clothing">clothing</option>
-                  <option value="shoes">shoes</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm mb-2 opacity-60">TAG</label>
                 <select
-                  name="tag"
-                  value={formData.tag}
+                  name="tag_id"
+                  value={formData.tag_id}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
                 >
                   <option value="">Select tag</option>
-                  <option value="y2k">y2k</option>
-                  <option value="christmas">christmas</option>
-                  <option value="summer">summer</option>
-                  <option value="grunge">grunge</option>
+                  {tags.map((tag) => (
+                    <option key={tag.id} value={tag.id}>
+                      {tag.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm mb-2 opacity-60">SIZE</label>
                 <select
-                  name="size"
-                  value={formData.size}
+                  name="size_id"
+                  value={formData.size_id}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
                 >
                   <option value="">Select size</option>
-                  <option value="s">S</option>
-                  <option value="m">M</option>
-                  <option value="l">L</option>
+                  {sizes.map((size) => (
+                    <option key={size.id} value={size.id}>
+                      {size.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
