@@ -53,8 +53,13 @@ export default function ImageUploadMultiple({
         existingUrl: url,
       }))
       setImages(existingImageFiles)
+
+      // Also notify parent about the initial order
+      if (onOrderChange) {
+        onOrderChange(existingImages)
+      }
     }
-  }, [existingImages])
+  }, [existingImages, images.length, onOrderChange])
 
   // Set video source when stream is available
   useEffect(() => {
