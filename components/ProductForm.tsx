@@ -242,8 +242,8 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
       // Determine the primary image URL
       let firstImageUrl: string | null = null
 
-      if (mode === 'edit' && orderedImageUrls.length > 0) {
-        // For edit mode: use the first image from the reordered list
+      if (orderedImageUrls.length > 0) {
+        // Use the first image from the reordered list (works for both create and edit)
         const firstOrderedUrl = orderedImageUrls[0]
 
         // If it's a blob URL (new image), replace with uploaded URL
@@ -251,12 +251,15 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
           const blobIndex = orderedImageUrls.filter((u) => u.startsWith('blob:')).indexOf(firstOrderedUrl)
           firstImageUrl = uploadedUrls[blobIndex] || null
         } else {
-          // It's an existing image URL
+          // It's an existing image URL (only in edit mode)
           firstImageUrl = firstOrderedUrl
         }
-      } else {
-        // For create mode: use first uploaded image or fallback
-        firstImageUrl = uploadedUrls.length > 0 ? uploadedUrls[0] : (existingImageUrls[0] || null)
+      } else if (uploadedUrls.length > 0) {
+        // Fallback: use first uploaded image
+        firstImageUrl = uploadedUrls[0]
+      } else if (existingImageUrls.length > 0) {
+        // Fallback: use first existing image
+        firstImageUrl = existingImageUrls[0]
       }
 
       const productData: any = {
@@ -291,8 +294,18 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
         productId = newProduct.id
 
         // Save images to product_images table
-        if (uploadedUrls.length > 0) {
-          const imageRecords = uploadedUrls.map((url, index) => ({
+        if (orderedImageUrls.length > 0) {
+          // Build final ordered list: replace blob URLs with uploaded URLs
+          const finalOrderedUrls = orderedImageUrls.map((url) => {
+            // If it's a blob URL (new image), find the corresponding uploaded URL
+            if (url.startsWith('blob:')) {
+              const index = orderedImageUrls.filter((u) => u.startsWith('blob:')).indexOf(url)
+              return uploadedUrls[index] || url
+            }
+            return url
+          })
+
+          const imageRecords = finalOrderedUrls.map((url, index) => ({
             article_id: productId,
             image_url: url,
             display_order: index,
@@ -306,6 +319,22 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
           if (imagesError) {
             console.error('Failed to save images:', imagesError)
             // Don't fail the whole operation, just log
+          }
+        } else if (uploadedUrls.length > 0) {
+          // Fallback: if no ordered list, just save uploaded URLs in order
+          const imageRecords = uploadedUrls.map((url, index) => ({
+            article_id: productId,
+            image_url: url,
+            display_order: index,
+            is_primary: index === 0,
+          }))
+
+          const { error: imagesError } = await supabase
+            .from('product_images')
+            .insert(imageRecords)
+
+          if (imagesError) {
+            console.error('Failed to save images:', imagesError)
           }
         }
 
