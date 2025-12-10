@@ -42,9 +42,12 @@ export default function ImageUploadMultiple({
     return 1
   })
 
-  // Initialize with existing images
+  // Initialize with existing images - runs when existingImages prop changes
   useEffect(() => {
-    if (existingImages.length > 0 && images.length === 0) {
+    console.log('ImageUploadMultiple: existingImages changed', existingImages)
+
+    if (existingImages.length > 0) {
+      console.log('ImageUploadMultiple: Loading existing images', existingImages.length)
       const existingImageFiles: ImageFile[] = existingImages.map((url, index) => ({
         id: `existing-${index}`,
         file: new File([], 'existing', { type: 'image/jpeg' }), // Dummy file
@@ -58,8 +61,13 @@ export default function ImageUploadMultiple({
       if (onOrderChange) {
         onOrderChange(existingImages)
       }
+    } else if (existingImages.length === 0 && images.length > 0) {
+      // Only clear if we actually have images to clear
+      console.log('ImageUploadMultiple: Clearing images')
+      setImages([])
     }
-  }, [existingImages, images.length, onOrderChange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingImages])
 
   // Set video source when stream is available
   useEffect(() => {
