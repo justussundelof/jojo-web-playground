@@ -239,8 +239,25 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
         }
       }
 
-      // Prepare data (keep img_url for backward compatibility - use first image)
-      const firstImageUrl = uploadedUrls.length > 0 ? uploadedUrls[0] : (existingImageUrls[0] || null)
+      // Determine the primary image URL
+      let firstImageUrl: string | null = null
+
+      if (mode === 'edit' && orderedImageUrls.length > 0) {
+        // For edit mode: use the first image from the reordered list
+        const firstOrderedUrl = orderedImageUrls[0]
+
+        // If it's a blob URL (new image), replace with uploaded URL
+        if (firstOrderedUrl.startsWith('blob:')) {
+          const blobIndex = orderedImageUrls.filter((u) => u.startsWith('blob:')).indexOf(firstOrderedUrl)
+          firstImageUrl = uploadedUrls[blobIndex] || null
+        } else {
+          // It's an existing image URL
+          firstImageUrl = firstOrderedUrl
+        }
+      } else {
+        // For create mode: use first uploaded image or fallback
+        firstImageUrl = uploadedUrls.length > 0 ? uploadedUrls[0] : (existingImageUrls[0] || null)
+      }
 
       const productData: any = {
         title: formData.title || null,
