@@ -19,6 +19,7 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
   const [error, setError] = useState<string | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
+  const [orderedImageUrls, setOrderedImageUrls] = useState<string[]>([])
 
   // Fetched data from database
   const [genders, setGenders] = useState<Category[]>([])
@@ -305,24 +306,34 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
           throw updateError
         }
 
-        // Handle images for update: only add new images
-        // Keep existing images, just append new ones
-        if (uploadedUrls.length > 0) {
-          // Get current max display_order
-          const { data: existingImages } = await supabase
+        // Handle image order updates
+        if (orderedImageUrls.length > 0) {
+          // Build final ordered list: replace preview URLs with uploaded URLs
+          const finalOrderedUrls = orderedImageUrls.map((url) => {
+            // If it's a blob URL (preview), find the corresponding uploaded URL
+            if (url.startsWith('blob:')) {
+              const index = orderedImageUrls.filter((u) => u.startsWith('blob:')).indexOf(url)
+              return uploadedUrls[index] || url
+            }
+            return url
+          })
+
+          // Delete all existing images for this product
+          const { error: deleteError } = await supabase
             .from('product_images')
-            .select('display_order')
+            .delete()
             .eq('article_id', productId)
-            .order('display_order', { ascending: false })
-            .limit(1)
 
-          const maxOrder = existingImages && existingImages.length > 0 ? existingImages[0].display_order : -1
+          if (deleteError) {
+            console.error('Failed to delete old images:', deleteError)
+          }
 
-          const imageRecords = uploadedUrls.map((url, index) => ({
+          // Insert all images with new order
+          const imageRecords = finalOrderedUrls.map((url, index) => ({
             article_id: productId,
             image_url: url,
-            display_order: maxOrder + 1 + index,
-            is_primary: false, // New images are not primary
+            display_order: index,
+            is_primary: index === 0,
           }))
 
           const { error: imagesError } = await supabase
@@ -357,6 +368,7 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
         <div>
           <ImageUploadMultiple
             onImagesChange={setImageFiles}
+            onOrderChange={setOrderedImageUrls}
             existingImages={existingImageUrls}
             maxImages={8}
           />

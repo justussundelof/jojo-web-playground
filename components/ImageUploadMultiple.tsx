@@ -12,12 +12,14 @@ interface ImageFile {
 
 interface ImageUploadMultipleProps {
   onImagesChange: (files: File[]) => void
+  onOrderChange?: (imageUrls: string[]) => void // Called when image order changes
   existingImages?: string[] // URLs of existing images
   maxImages?: number
 }
 
 export default function ImageUploadMultiple({
   onImagesChange,
+  onOrderChange,
   existingImages = [],
   maxImages = 8,
 }: ImageUploadMultipleProps) {
@@ -98,6 +100,21 @@ export default function ImageUploadMultiple({
     setTimeout(startCamera, 100)
   }
 
+  // Helper to notify parent of changes
+  const notifyParent = (updatedImages: ImageFile[]) => {
+    // Notify about new files
+    const newFiles = updatedImages.filter((img) => !img.isExisting).map((img) => img.file)
+    onImagesChange(newFiles)
+
+    // Notify about image order (all images)
+    if (onOrderChange) {
+      const imageUrls = updatedImages.map((img) =>
+        img.isExisting ? img.existingUrl! : img.preview
+      )
+      onOrderChange(imageUrls)
+    }
+  }
+
   // Capture photo from camera
   const capturePhoto = () => {
     if (!videoRef.current) return
@@ -126,9 +143,8 @@ export default function ImageUploadMultiple({
           setPhotoCounter(photoCounter + 1)
           localStorage.setItem('jojo-photo-counter', String(photoCounter + 1))
 
-          // Notify parent of new files
-          const newFiles = updatedImages.filter((img) => !img.isExisting).map((img) => img.file)
-          onImagesChange(newFiles)
+          // Notify parent
+          notifyParent(updatedImages)
 
           stopCamera()
         }
@@ -214,9 +230,8 @@ export default function ImageUploadMultiple({
       const updatedImages = [...images, ...newImages]
       setImages(updatedImages)
 
-      // Notify parent of new files
-      const newFiles = updatedImages.filter((img) => !img.isExisting).map((img) => img.file)
-      onImagesChange(newFiles)
+      // Notify parent
+      notifyParent(updatedImages)
     } catch (error) {
       console.error('File upload error:', error)
     } finally {
@@ -232,9 +247,8 @@ export default function ImageUploadMultiple({
     const updatedImages = images.filter((img) => img.id !== id)
     setImages(updatedImages)
 
-    // Notify parent of new files
-    const newFiles = updatedImages.filter((img) => !img.isExisting).map((img) => img.file)
-    onImagesChange(newFiles)
+    // Notify parent
+    notifyParent(updatedImages)
   }
 
   // Move image up/down
@@ -248,9 +262,8 @@ export default function ImageUploadMultiple({
     updatedImages[newIndex] = temp
     setImages(updatedImages)
 
-    // Notify parent of new files
-    const newFiles = updatedImages.filter((img) => !img.isExisting).map((img) => img.file)
-    onImagesChange(newFiles)
+    // Notify parent
+    notifyParent(updatedImages)
   }
 
   const canAddMore = images.length < maxImages
@@ -272,7 +285,7 @@ export default function ImageUploadMultiple({
             onClick={() => fileInputRef.current?.click()}
             className="flex-1 px-4 py-3 border border-black hover:bg-black hover:text-white transition-colors"
           >
-            📁 UPLOAD FROM DEVICE
+            📁 VÄLJ FIL
           </button>
         </div>
       )}
