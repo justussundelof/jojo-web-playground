@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import heic2any from 'heic2any'
 
 interface ImageFile {
   id: string
@@ -25,6 +26,8 @@ export default function ImageUploadMultiple({
   const [isCapturing, setIsCapturing] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment')
+  const [isConverting, setIsConverting] = useState(false)
+  const [conversionError, setConversionError] = useState<string | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -134,8 +137,47 @@ export default function ImageUploadMultiple({
     }
   }
 
+  // Convert HEIC to JPEG
+  const convertHeicToJpeg = async (file: File): Promise<File> => {
+    try {
+      // Check if file is HEIC/HEIF
+      const isHeic =
+        file.type === 'image/heic' ||
+        file.type === 'image/heif' ||
+        file.name.toLowerCase().endsWith('.heic') ||
+        file.name.toLowerCase().endsWith('.heif')
+
+      if (!isHeic) return file
+
+      setConversionError(null)
+      setIsConverting(true)
+
+      // Convert HEIC to JPEG
+      const convertedBlob = (await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.95,
+      })) as Blob
+
+      // Create new File object
+      const convertedFile = new File(
+        [convertedBlob],
+        file.name.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg'),
+        { type: 'image/jpeg' }
+      )
+
+      setIsConverting(false)
+      return convertedFile
+    } catch (error) {
+      console.error('HEIC conversion failed:', error)
+      setIsConverting(false)
+      setConversionError('Failed to convert HEIC image. Please try a different file.')
+      throw error
+    }
+  }
+
   // Handle file upload from file explorer
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
 
     if (images.length + files.length > maxImages) {
@@ -143,22 +185,43 @@ export default function ImageUploadMultiple({
       return
     }
 
-    const newImages: ImageFile[] = files.map((file, index) => ({
-      id: `${Date.now()}-${index}`,
-      file,
-      preview: URL.createObjectURL(file),
-    }))
+    try {
+      setConversionError(null)
 
-    const updatedImages = [...images, ...newImages]
-    setImages(updatedImages)
+      // Process each file (convert HEIC if needed)
+      const processedFiles: File[] = []
+      for (const file of files) {
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`File "${file.name}" is too large. Maximum size is 10MB.`)
+          continue
+        }
 
-    // Notify parent of new files
-    const newFiles = updatedImages.filter((img) => !img.isExisting).map((img) => img.file)
-    onImagesChange(newFiles)
+        // Convert HEIC if needed
+        const processedFile = await convertHeicToJpeg(file)
+        processedFiles.push(processedFile)
+      }
 
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      // Create image objects
+      const newImages: ImageFile[] = processedFiles.map((file, index) => ({
+        id: `${Date.now()}-${index}`,
+        file,
+        preview: URL.createObjectURL(file),
+      }))
+
+      const updatedImages = [...images, ...newImages]
+      setImages(updatedImages)
+
+      // Notify parent of new files
+      const newFiles = updatedImages.filter((img) => !img.isExisting).map((img) => img.file)
+      onImagesChange(newFiles)
+    } catch (error) {
+      console.error('File upload error:', error)
+    } finally {
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -216,11 +279,28 @@ export default function ImageUploadMultiple({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/*"
         multiple
         onChange={handleFileUpload}
         className="hidden"
       />
+
+      {/* Conversion Loading State */}
+      {isConverting && (
+        <div className="border border-black p-4 bg-gray-50">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm">Converting HEIC image to JPEG...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Conversion Error */}
+      {conversionError && (
+        <div className="border border-red-600 p-4 bg-red-50 text-red-600 text-sm">
+          {conversionError}
+        </div>
+      )}
 
       {/* Camera View */}
       {isCapturing && (
