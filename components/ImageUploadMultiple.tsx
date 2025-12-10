@@ -56,6 +56,13 @@ export default function ImageUploadMultiple({
     }
   }, [existingImages])
 
+  // Set video source when stream is available
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream])
+
   // Cleanup stream on unmount
   useEffect(() => {
     return () => {
@@ -74,10 +81,6 @@ export default function ImageUploadMultiple({
       })
       setStream(mediaStream)
       setIsCapturing(true)
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-      }
     } catch (error) {
       console.error('Camera error:', error)
       alert('Could not access camera. Please check permissions.')
