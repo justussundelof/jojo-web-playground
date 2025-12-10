@@ -89,10 +89,7 @@ export default async function ProductsPage() {
                 )}
                 <div className="text-sm space-y-1">
                   <div className="font-medium">{product.title}</div>
-                  {product.designer && (
-                    <div className="opacity-60 text-xs">{product.designer}</div>
-                  )}
-                  <div className="opacity-60">${product.price}</div>
+                  <div className="opacity-60">{product.price} kr</div>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {product.category && (
                       <span className="text-xs border border-black px-2 py-0.5">

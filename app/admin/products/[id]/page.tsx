@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Product } from '@/types/product'
+import ProductActions from '@/components/ProductActions'
 
 export default async function ProductDetailPage({
   params,
@@ -95,13 +96,10 @@ export default async function ProductDetailPage({
               <h1 className="text-3xl mb-2 tracking-tight">
                 {product.title || 'Untitled'}
               </h1>
-              {product.designer && (
-                <p className="text-xl opacity-60">{product.designer}</p>
-              )}
             </div>
 
             {product.price && (
-              <div className="text-2xl">${product.price}</div>
+              <div className="text-2xl">{product.price} kr</div>
             )}
 
             {product.description && (
@@ -156,13 +154,88 @@ export default async function ProductDetailPage({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="opacity-60 text-sm">For Sale:</span>
+                  <span className="opacity-60 text-sm">Listing Type:</span>
                   <span className="text-sm">
-                    {product.for_sale ? '✓ Yes' : '✗ No'}
+                    {product.for_sale ? 'Till salu (For Sale)' : 'Uthyrning (For Rent)'}
                   </span>
                 </div>
               </div>
             </div>
+
+            {/* Measurements Section */}
+            {product.measurements && Object.keys(product.measurements).length > 0 && (
+              <div className="border-t border-black pt-6">
+                <h2 className="text-sm mb-4 opacity-60">MEASUREMENTS (cm)</h2>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {(product.measurements as any).shoulder_width && (
+                    <div>
+                      <span className="opacity-60">Axel till axel:</span>
+                      <div className="mt-1">{(product.measurements as any).shoulder_width} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).chest_width && (
+                    <div>
+                      <span className="opacity-60">Bröstbredd:</span>
+                      <div className="mt-1">{(product.measurements as any).chest_width} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).sleeve_length && (
+                    <div>
+                      <span className="opacity-60">Ärmlängd:</span>
+                      <div className="mt-1">{(product.measurements as any).sleeve_length} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).garment_length && (
+                    <div>
+                      <span className="opacity-60">Plagglängd:</span>
+                      <div className="mt-1">{(product.measurements as any).garment_length} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).waist_width && (
+                    <div>
+                      <span className="opacity-60">Midjebredd:</span>
+                      <div className="mt-1">{(product.measurements as any).waist_width} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).hip_width && (
+                    <div>
+                      <span className="opacity-60">Höftbredd:</span>
+                      <div className="mt-1">{(product.measurements as any).hip_width} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).inseam && (
+                    <div>
+                      <span className="opacity-60">Innerbenslängd:</span>
+                      <div className="mt-1">{(product.measurements as any).inseam} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).outseam && (
+                    <div>
+                      <span className="opacity-60">Ytterbenslängd:</span>
+                      <div className="mt-1">{(product.measurements as any).outseam} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).rise && (
+                    <div>
+                      <span className="opacity-60">Grenhöjd:</span>
+                      <div className="mt-1">{(product.measurements as any).rise} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).leg_opening && (
+                    <div>
+                      <span className="opacity-60">Benslut:</span>
+                      <div className="mt-1">{(product.measurements as any).leg_opening} cm</div>
+                    </div>
+                  )}
+                  {(product.measurements as any).slit_length && (
+                    <div>
+                      <span className="opacity-60">Slits:</span>
+                      <div className="mt-1">{(product.measurements as any).slit_length} cm</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {product.created_at && (
               <div className="border-t border-black pt-6 text-sm opacity-60">
@@ -175,14 +248,7 @@ export default async function ProductDetailPage({
             )}
 
             {/* Action Buttons */}
-            <div className="border-t border-black pt-6 flex gap-4">
-              <button className="px-6 py-3 border border-black hover:bg-black hover:text-white transition-colors">
-                Edit Product
-              </button>
-              <button className="px-6 py-3 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition-colors">
-                Delete Product
-              </button>
-            </div>
+            <ProductActions productId={product.id!} imageUrl={product.img_url} />
           </div>
         </div>
       </div>
