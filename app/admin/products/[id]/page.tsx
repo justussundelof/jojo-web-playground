@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Product } from '@/types/product'
 import ProductActions from '@/components/ProductActions'
+import ImageGallery from '@/components/ImageGallery'
 
 export default async function ProductDetailPage({
   params,
@@ -35,6 +36,20 @@ export default async function ProductDetailPage({
   if (error || !product) {
     notFound()
   }
+
+  // Fetch product images
+  const { data: imagesData } = await supabase
+    .from('product_images')
+    .select('image_url')
+    .eq('article_id', id)
+    .order('display_order')
+
+  // Use product_images if available, otherwise fallback to img_url
+  const productImages = imagesData && imagesData.length > 0
+    ? imagesData.map((img) => img.image_url)
+    : product.img_url
+    ? [product.img_url]
+    : []
 
   return (
     <div className="min-h-screen">
@@ -73,21 +88,9 @@ export default async function ProductDetailPage({
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Image */}
+          {/* Image Gallery */}
           <div>
-            {product.img_url ? (
-              <div className="aspect-[3/4] bg-gray-100 overflow-hidden">
-                <img
-                  src={product.img_url}
-                  alt={product.title || 'Product image'}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="aspect-[3/4] bg-gray-100 flex items-center justify-center">
-                <span className="text-sm opacity-40">No image</span>
-              </div>
-            )}
+            <ImageGallery images={productImages} alt={product.title || 'Product'} />
           </div>
 
           {/* Details */}
@@ -131,17 +134,6 @@ export default async function ProductDetailPage({
                   <div>
                     <span className="opacity-60">Tag:</span>
                     <div className="mt-1">{product.tag.name}</div>
-                  </div>
-                )}
-
-                {(product.width || product.height) && (
-                  <div>
-                    <span className="opacity-60">Dimensions:</span>
-                    <div className="mt-1">
-                      {product.width && `W: ${product.width}cm`}
-                      {product.width && product.height && ' × '}
-                      {product.height && `H: ${product.height}cm`}
-                    </div>
                   </div>
                 )}
               </div>
