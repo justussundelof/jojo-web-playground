@@ -82,21 +82,25 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
 
       // If editing, fetch the parent category (gender) for the product's category
       console.log('ProductForm: About to check for edit mode', { mode, hasInitialProduct: !!initialProduct })
-      if (mode === 'edit' && initialProduct?.category_id) {
-        const { data: categoryData } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('id', initialProduct.category_id)
-          .single()
+      if (mode === 'edit' && initialProduct) {
+        // Fetch category data if available
+        if (initialProduct.category_id) {
+          const { data: categoryData } = await supabase
+            .from('categories')
+            .select('*')
+            .eq('id', initialProduct.category_id)
+            .single()
 
-        if (categoryData) {
-          setSelectedCategoryName(categoryData.name)
-          if (categoryData.parent_id) {
-            setSelectedGender(categoryData.parent_id.toString())
+          if (categoryData) {
+            setSelectedCategoryName(categoryData.name)
+            if (categoryData.parent_id) {
+              setSelectedGender(categoryData.parent_id.toString())
+            }
           }
         }
 
-        // Fetch existing images
+        // Fetch existing images (always, regardless of category)
+        console.log('ProductForm: About to fetch images for product', initialProduct.id)
         const { data: imagesData, error: imagesError } = await supabase
           .from('product_images')
           .select('*')
