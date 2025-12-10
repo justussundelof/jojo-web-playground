@@ -14,12 +14,16 @@ interface ProductFormProps {
 }
 
 export default function ProductForm({ mode, initialProduct }: ProductFormProps) {
+  console.log('ProductForm: Render', { mode, initialProduct: initialProduct?.id })
+
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
   const [orderedImageUrls, setOrderedImageUrls] = useState<string[]>([])
+
+  console.log('ProductForm: State check', { existingImageUrls })
 
   // Fetched data from database
   const [genders, setGenders] = useState<Category[]>([])
@@ -46,6 +50,8 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
 
   // Fetch categories, tags, and sizes on mount
   useEffect(() => {
+    console.log('ProductForm: useEffect triggered', { mode, initialProductId: initialProduct?.id })
+
     const fetchData = async () => {
       const supabase = createClient()
 
@@ -75,6 +81,7 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
       if (sizeData) setSizes(sizeData)
 
       // If editing, fetch the parent category (gender) for the product's category
+      console.log('ProductForm: About to check for edit mode', { mode, hasInitialProduct: !!initialProduct })
       if (mode === 'edit' && initialProduct?.category_id) {
         const { data: categoryData } = await supabase
           .from('categories')
