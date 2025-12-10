@@ -3,7 +3,7 @@
 import { useState, FormEvent, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import PhotoCapture from '@/components/PhotoCapture'
+import ImageUploadMultiple from '@/components/ImageUploadMultiple'
 import TagSelect from '@/components/TagSelect'
 import MeasurementFields from '@/components/MeasurementFields'
 import type { Category, Tag, Size, Article, ProductMeasurements } from '@/types/database'
@@ -17,7 +17,8 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
 
   // Fetched data from database
   const [genders, setGenders] = useState<Category[]>([])
@@ -34,8 +35,6 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
     category_id: initialProduct?.category_id?.toString() || '',
     tag_id: initialProduct?.tag_id?.toString() || '',
     size_id: initialProduct?.size_id?.toString() || '',
-    width: initialProduct?.width || '',
-    height: initialProduct?.height || '',
     in_stock: initialProduct?.in_stock ?? true,
     for_sale: initialProduct?.for_sale ?? true,
   })
@@ -87,6 +86,20 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
           if (categoryData.parent_id) {
             setSelectedGender(categoryData.parent_id.toString())
           }
+        }
+
+        // Fetch existing images
+        const { data: imagesData } = await supabase
+          .from('product_images')
+          .select('*')
+          .eq('article_id', initialProduct.id)
+          .order('display_order')
+
+        if (imagesData && imagesData.length > 0) {
+          setExistingImageUrls(imagesData.map((img) => img.image_url))
+        } else if (initialProduct.img_url) {
+          // Fallback to old single image
+          setExistingImageUrls([initialProduct.img_url])
         }
       }
     }
@@ -213,26 +226,28 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
     try {
       const supabase = createClient()
 
-      // Upload image if a new photo was captured
-      let imageUrl = initialProduct?.img_url || null
-      if (photoFile) {
-        const uploadedUrl = await uploadImage(photoFile)
-        if (!uploadedUrl) {
-          throw new Error('Failed to upload image')
+      // Upload all new images to Cloudinary
+      const uploadedUrls: string[] = []
+      if (imageFiles.length > 0) {
+        for (const file of imageFiles) {
+          const uploadedUrl = await uploadImage(file)
+          if (!uploadedUrl) {
+            throw new Error('Failed to upload one or more images')
+          }
+          uploadedUrls.push(uploadedUrl)
         }
-        imageUrl = uploadedUrl
       }
 
-      // Prepare data
+      // Prepare data (keep img_url for backward compatibility - use first image)
+      const firstImageUrl = uploadedUrls.length > 0 ? uploadedUrls[0] : (existingImageUrls[0] || null)
+
       const productData: any = {
         title: formData.title || null,
         description: formData.description || null,
         price: formData.price ? parseInt(formData.price) : null,
-        width: formData.width || null,
-        height: formData.height || null,
         in_stock: formData.in_stock,
         for_sale: formData.for_sale,
-        img_url: imageUrl,
+        img_url: firstImageUrl,
         measurements: measurements || {},
       }
 
@@ -241,29 +256,85 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
       if (formData.tag_id) productData.tag_id = parseInt(formData.tag_id)
       if (formData.size_id) productData.size_id = parseInt(formData.size_id)
 
+      let productId: number
+
       if (mode === 'create') {
         // Create new product
-        const { error: insertError } = await supabase
+        const { data: newProduct, error: insertError } = await supabase
           .from('article')
           .insert([productData])
+          .select()
+          .single()
 
-        if (insertError) {
-          throw insertError
+        if (insertError || !newProduct) {
+          throw insertError || new Error('Failed to create product')
+        }
+
+        productId = newProduct.id
+
+        // Save images to product_images table
+        if (uploadedUrls.length > 0) {
+          const imageRecords = uploadedUrls.map((url, index) => ({
+            article_id: productId,
+            image_url: url,
+            display_order: index,
+            is_primary: index === 0,
+          }))
+
+          const { error: imagesError } = await supabase
+            .from('product_images')
+            .insert(imageRecords)
+
+          if (imagesError) {
+            console.error('Failed to save images:', imagesError)
+            // Don't fail the whole operation, just log
+          }
         }
 
         router.push('/admin/products')
       } else {
         // Update existing product
+        productId = initialProduct!.id!
+
         const { error: updateError } = await supabase
           .from('article')
           .update(productData)
-          .eq('id', initialProduct!.id!)
+          .eq('id', productId)
 
         if (updateError) {
           throw updateError
         }
 
-        router.push(`/admin/products/${initialProduct!.id}`)
+        // Handle images for update: only add new images
+        // Keep existing images, just append new ones
+        if (uploadedUrls.length > 0) {
+          // Get current max display_order
+          const { data: existingImages } = await supabase
+            .from('product_images')
+            .select('display_order')
+            .eq('article_id', productId)
+            .order('display_order', { ascending: false })
+            .limit(1)
+
+          const maxOrder = existingImages && existingImages.length > 0 ? existingImages[0].display_order : -1
+
+          const imageRecords = uploadedUrls.map((url, index) => ({
+            article_id: productId,
+            image_url: url,
+            display_order: maxOrder + 1 + index,
+            is_primary: false, // New images are not primary
+          }))
+
+          const { error: imagesError } = await supabase
+            .from('product_images')
+            .insert(imageRecords)
+
+          if (imagesError) {
+            console.error('Failed to save images:', imagesError)
+          }
+        }
+
+        router.push(`/admin/products/${productId}`)
       }
 
       router.refresh()
@@ -284,13 +355,10 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Photo Section */}
         <div>
-          <PhotoCapture
-            onPhotoCapture={(file) => setPhotoFile(file)}
-            currentImage={
-              photoFile
-                ? URL.createObjectURL(photoFile)
-                : initialProduct?.img_url || undefined
-            }
+          <ImageUploadMultiple
+            onImagesChange={setImageFiles}
+            existingImages={existingImageUrls}
+            maxImages={8}
           />
         </div>
 
@@ -394,32 +462,6 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm mb-2 opacity-60">WIDTH (cm)</label>
-              <input
-                type="text"
-                name="width"
-                value={formData.width}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-black focus:outline-none"
-                placeholder="50"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-2 opacity-60">HEIGHT (cm)</label>
-              <input
-                type="text"
-                name="height"
-                value={formData.height}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-black focus:outline-none"
-                placeholder="70"
-              />
-            </div>
           </div>
 
           <div className="space-y-4 pt-2">
