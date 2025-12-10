@@ -90,17 +90,24 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
         }
 
         // Fetch existing images
-        const { data: imagesData } = await supabase
+        const { data: imagesData, error: imagesError } = await supabase
           .from('product_images')
           .select('*')
           .eq('article_id', initialProduct.id)
           .order('display_order')
 
+        console.log('ProductForm: Fetched images', { imagesData, imagesError, productId: initialProduct.id })
+
         if (imagesData && imagesData.length > 0) {
-          setExistingImageUrls(imagesData.map((img) => img.image_url))
+          const urls = imagesData.map((img) => img.image_url)
+          console.log('ProductForm: Setting existing image URLs', urls)
+          setExistingImageUrls(urls)
         } else if (initialProduct.img_url) {
           // Fallback to old single image
+          console.log('ProductForm: Using fallback img_url', initialProduct.img_url)
           setExistingImageUrls([initialProduct.img_url])
+        } else {
+          console.log('ProductForm: No images found')
         }
       }
     }
