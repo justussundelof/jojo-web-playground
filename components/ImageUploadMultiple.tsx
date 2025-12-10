@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import heic2any from 'heic2any'
 
 interface ImageFile {
   id: string
@@ -151,6 +150,9 @@ export default function ImageUploadMultiple({
 
       setConversionError(null)
       setIsConverting(true)
+
+      // Dynamically import heic2any (only on client)
+      const heic2any = (await import('heic2any')).default
 
       // Convert HEIC to JPEG
       const convertedBlob = (await heic2any({
