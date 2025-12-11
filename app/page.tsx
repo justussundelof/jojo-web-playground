@@ -1,13 +1,13 @@
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
-import Image from 'next/image'
+import { optimizeCloudinaryImage } from '@/utils/cloudinary'
 
 export default async function Page() {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
 
-  // Fetch products with their primary images
+  // Fetch products with their related data
   const { data: products } = await supabase
     .from('article')
     .select(`
@@ -29,9 +29,19 @@ export default async function Page() {
         .eq('is_primary', true)
         .single()
 
+      const primaryImage = images?.image_url || product.img_url
+
       return {
         ...product,
-        primaryImage: images?.image_url || product.img_url,
+        primaryImage: primaryImage
+          ? optimizeCloudinaryImage(primaryImage, {
+              width: 600,
+              height: 800,
+              quality: 'auto',
+              crop: 'fill',
+              gravity: 'auto',
+            })
+          : null,
       }
     })
   )
@@ -47,36 +57,46 @@ export default async function Page() {
 
       {/* Product Grid */}
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {productsWithImages.map((product) => (
             <Link
               key={product.id}
               href={`/products/${product.id}`}
               className="group"
             >
-              <div className="aspect-[3/4] bg-gray-100 border border-black overflow-hidden">
-                {product.primaryImage ? (
+              {product.primaryImage ? (
+                <div className="aspect-[3/4] bg-gray-100 mb-3 overflow-hidden">
                   <img
                     src={product.primaryImage}
                     alt={product.title || 'Product'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
-              <div className="mt-3">
-                <h3 className="font-medium">{product.title}</h3>
-                <p className="text-sm opacity-60 mt-1">
-                  {product.price} kr
-                </p>
-                {product.category && (
-                  <p className="text-xs opacity-40 mt-1">
-                    {product.category.name}
-                  </p>
-                )}
+                </div>
+              ) : (
+                <div className="aspect-[3/4] bg-gray-100 mb-3 flex items-center justify-center">
+                  <span className="text-sm opacity-40">No image</span>
+                </div>
+              )}
+              <div className="text-sm space-y-1">
+                <div className="font-medium">{product.title}</div>
+                <div className="opacity-60">{product.price} kr</div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {product.category && (
+                    <span className="text-xs border border-black px-2 py-0.5">
+                      {product.category.name}
+                    </span>
+                  )}
+                  {product.size && (
+                    <span className="text-xs border border-black px-2 py-0.5">
+                      {product.size.name}
+                    </span>
+                  )}
+                  {product.tag && (
+                    <span className="text-xs border border-black px-2 py-0.5 opacity-60">
+                      {product.tag.name}
+                    </span>
+                  )}
+                </div>
               </div>
             </Link>
           ))}

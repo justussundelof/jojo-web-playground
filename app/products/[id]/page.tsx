@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { optimizeCloudinaryImage } from '@/utils/cloudinary'
 
 export default async function ProductPage({
   params,
@@ -36,9 +37,21 @@ export default async function ProductPage({
     .order('display_order')
 
   const productImages = images && images.length > 0
-    ? images.map((img) => img.image_url)
+    ? images.map((img) =>
+        optimizeCloudinaryImage(img.image_url, {
+          width: 1200,
+          quality: 'auto',
+          crop: 'fit',
+        })
+      )
     : product.img_url
-    ? [product.img_url]
+    ? [
+        optimizeCloudinaryImage(product.img_url, {
+          width: 1200,
+          quality: 'auto',
+          crop: 'fit',
+        }),
+      ]
     : []
 
   return (
