@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import localFont from "next/font/local";
 import { SiteProvider } from "./context/SiteContext";
+import { ProductProvider } from "@/context/ProductContext";
 import HeaderNav from "@/components/HeaderNav";
 
 export const gtSans = localFont({
@@ -83,10 +84,12 @@ export default function RootLayout({
       <body
         className={`${gtCompressed.variable} ${gtSans.variable} ${gtMono.variable} ${CLTSerifDensed.variable} ${CLTSerifRegular.variable} ${CLTSerifWide.variable} antialiased`}
       >
-        <SiteProvider>
-          <HeaderNav />
-          {children}
-        </SiteProvider>
+        <ProductProvider>
+          <SiteProvider>
+            <HeaderNav />
+            {children}
+          </SiteProvider>
+        </ProductProvider>
       </body>
     </html>
   );
