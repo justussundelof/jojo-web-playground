@@ -44,10 +44,7 @@ export default function ImageUploadMultiple({
 
   // Initialize with existing images - runs when existingImages prop changes
   useEffect(() => {
-    console.log('ImageUploadMultiple: existingImages changed', existingImages)
-
     if (existingImages.length > 0) {
-      console.log('ImageUploadMultiple: Loading existing images', existingImages.length)
       const existingImageFiles: ImageFile[] = existingImages.map((url, index) => ({
         id: `existing-${index}`,
         file: new File([], 'existing', { type: 'image/jpeg' }), // Dummy file
@@ -63,7 +60,6 @@ export default function ImageUploadMultiple({
       }
     } else if (existingImages.length === 0 && images.length > 0) {
       // Only clear if we actually have images to clear
-      console.log('ImageUploadMultiple: Clearing images')
       setImages([])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
