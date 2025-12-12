@@ -14,8 +14,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Optimize image URL if available
   const imageUrl = product.img_url
     ? optimizeCloudinaryImage(product.img_url, {
-        width: 600,
-        height: 800,
+        width: 800,
+        height: 1066,
         quality: "auto",
         crop: "fill",
         gravity: "auto",
