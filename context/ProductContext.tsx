@@ -47,7 +47,25 @@ export function ProductProvider({ children }: { children: ReactNode }) {
 
       if (fetchError) throw fetchError
 
-      setProducts(data || [])
+      // For each product, get the primary image from product_images table
+      const productsWithImages = await Promise.all(
+        (data || []).map(async (product) => {
+          const { data: images } = await supabase
+            .from('product_images')
+            .select('image_url')
+            .eq('article_id', product.id)
+            .eq('is_primary', true)
+            .single()
+
+          // Use primary image from product_images, fallback to img_url
+          return {
+            ...product,
+            img_url: images?.image_url || product.img_url,
+          }
+        })
+      )
+
+      setProducts(productsWithImages)
     } catch (err) {
       console.error('Error fetching products:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch products')
