@@ -14,16 +14,12 @@ interface ProductFormProps {
 }
 
 export default function ProductForm({ mode, initialProduct }: ProductFormProps) {
-  console.log('ProductForm: Render', { mode, initialProduct: initialProduct?.id })
-
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
   const [orderedImageUrls, setOrderedImageUrls] = useState<string[]>([])
-
-  console.log('ProductForm: State check', { existingImageUrls })
 
   // Fetched data from database
   const [genders, setGenders] = useState<Category[]>([])
@@ -50,8 +46,6 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
 
   // Fetch categories, tags, and sizes on mount
   useEffect(() => {
-    console.log('ProductForm: useEffect triggered', { mode, initialProductId: initialProduct?.id })
-
     const fetchData = async () => {
       const supabase = createClient()
 
@@ -81,7 +75,6 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
       if (sizeData) setSizes(sizeData)
 
       // If editing, fetch the parent category (gender) for the product's category
-      console.log('ProductForm: About to check for edit mode', { mode, hasInitialProduct: !!initialProduct })
       if (mode === 'edit' && initialProduct) {
         // Fetch category data if available
         if (initialProduct.category_id) {
@@ -100,25 +93,18 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
         }
 
         // Fetch existing images (always, regardless of category)
-        console.log('ProductForm: About to fetch images for product', initialProduct.id)
-        const { data: imagesData, error: imagesError } = await supabase
+        const { data: imagesData } = await supabase
           .from('product_images')
           .select('*')
           .eq('article_id', initialProduct.id)
           .order('display_order')
 
-        console.log('ProductForm: Fetched images', { imagesData, imagesError, productId: initialProduct.id })
-
         if (imagesData && imagesData.length > 0) {
           const urls = imagesData.map((img) => img.image_url)
-          console.log('ProductForm: Setting existing image URLs', urls)
           setExistingImageUrls(urls)
         } else if (initialProduct.img_url) {
           // Fallback to old single image
-          console.log('ProductForm: Using fallback img_url', initialProduct.img_url)
           setExistingImageUrls([initialProduct.img_url])
-        } else {
-          console.log('ProductForm: No images found')
         }
       }
     }
