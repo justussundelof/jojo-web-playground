@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 ## JOJO Vintage Shop - Public Product Grid & Context Setup
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2025-12-10
 **Project:** JOJO Web Playground - Frontend Product Display
 **Document Owner:** Product Team
@@ -11,11 +11,15 @@
 
 ## 1. Executive Summary
 
-This PRD outlines the implementation of a public-facing product grid on the homepage, including:
-1. Display products in a responsive grid on the homepage (`/app/page.tsx`)
-2. Create React Context for global product state management
-3. Fetch products from Supabase and store in Context
-4. Use consistent styling patterns from the existing admin interface
+This PRD outlines the implementation of a public-facing product grid on the homepage with modular component architecture, including:
+1. Create React Context for global product state management
+2. Build reusable `ProductGrid` component for displaying products
+3. Build `ProductPageClient` component for homepage layout and state handling
+4. Display products in a responsive grid on the homepage (`/app/page.tsx`)
+5. Fetch products from Supabase and store in Context
+6. Use consistent styling patterns from the existing admin interface
+
+**Architecture:** Modular, component-based approach for maximum reusability and clean separation of concerns.
 
 ---
 
@@ -267,45 +271,139 @@ export default function RootLayout({
 
 ---
 
-### 3.2 Homepage Product Grid
+### 3.2 Modular Component Architecture
 
 **Priority:** High
 **Effort:** Medium
 
 #### 3.2.1 Functional Requirements
 
-**FR-GRID-001:** Display products in responsive grid on homepage
+**FR-GRID-001:** Create modular, reusable components for product display
 
 **User Story:**
-> As a visitor, I want to see available products on the homepage so that I can browse the vintage shop inventory.
+> As a developer, I want modular components so that product grids can be reused throughout the application with consistent styling.
 
 **Requirements:**
-- Show all in-stock products
+- Create reusable `ProductGrid` component
+- Create `ProductPageClient` component for homepage layout
+- Keep `app/page.tsx` minimal (just render ProductPageClient)
+- Support all states: loading, error, empty, success
 - Responsive grid layout (1/3/4 columns)
 - Product image with 3:4 aspect ratio
-- Product title, price
-- Link to product detail page (future)
-- Loading state while fetching
-- Error state if fetch fails
-- Empty state if no products
+- Product title, price, tags
 
 ---
 
-#### 3.2.2 Technical Implementation
+#### 3.2.2 Component Architecture
 
-**Replace Homepage:**
+**Component Hierarchy:**
+```
+app/page.tsx (Server Component)
+└── ProductPageClient (Client Component)
+    ├── Header
+    └── ProductGrid (Reusable)
+        └── ProductCard (repeated)
+            ├── ProductImage
+            └── ProductInfo
+```
 
-**File:** `/app/page.tsx`
+**Benefits:**
+- **Modularity:** ProductGrid can be used anywhere (homepage, filtered pages, etc.)
+- **Separation of Concerns:** Layout vs. Grid vs. Card logic
+- **Reusability:** ProductGrid accepts products as prop, can show any filtered set
+- **Server/Client Boundary:** Page can be server component, client logic isolated
+
+---
+
+#### 3.2.3 Technical Implementation
+
+**Step 1: Create ProductGrid Component (Reusable)**
+
+**File:** `/components/ProductGrid.tsx`
+
+```typescript
+'use client'
+
+import type { Article } from '@/types/database'
+
+interface ProductGridProps {
+  products: Article[]
+}
+
+export default function ProductGrid({ products }: ProductGridProps) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      {products.map((product) => (
+        <div key={product.id} className="group cursor-pointer">
+          {/* Product Image */}
+          {product.img_url ? (
+            <div className="aspect-[3/4] bg-gray-100 mb-3 overflow-hidden border border-black">
+              <img
+                src={product.img_url}
+                alt={product.title || 'Product image'}
+                className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
+              />
+            </div>
+          ) : (
+            <div className="aspect-[3/4] bg-gray-100 mb-3 flex items-center justify-center border border-black">
+              <span className="text-sm opacity-40">NO IMAGE</span>
+            </div>
+          )}
+
+          {/* Product Info */}
+          <div className="text-sm space-y-1">
+            {/* Title */}
+            <div className="font-medium tracking-tight">
+              {product.title || 'Untitled'}
+            </div>
+
+            {/* Price */}
+            <div className="opacity-60">
+              ${product.price || '0.00'}
+            </div>
+
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {product.category && (
+                <span className="text-xs border border-black px-2 py-0.5 opacity-60">
+                  {product.category.name}
+                </span>
+              )}
+              {product.size && (
+                <span className="text-xs border border-black px-2 py-0.5 opacity-60">
+                  {product.size.name}
+                </span>
+              )}
+              {product.tag && (
+                <span className="text-xs border border-black px-2 py-0.5 opacity-60">
+                  {product.tag.name}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+---
+
+**Step 2: Create ProductPageClient Component**
+
+**File:** `/components/ProductPageClient.tsx`
 
 ```typescript
 'use client'
 
 import { useProducts } from '@/context/ProductContext'
-import Link from 'next/link'
+import ProductGrid from './ProductGrid'
 
-export default function HomePage() {
+export default function ProductPageClient() {
   const { products, loading, error } = useProducts()
 
+  // Loading State
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -316,6 +414,7 @@ export default function HomePage() {
     )
   }
 
+  // Error State
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -327,6 +426,7 @@ export default function HomePage() {
     )
   }
 
+  // Empty State
   if (products.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -337,6 +437,7 @@ export default function HomePage() {
     )
   }
 
+  // Success State - Display Products
   return (
     <main className="min-h-screen p-8 md:p-12 lg:p-16">
       {/* Header */}
@@ -350,58 +451,82 @@ export default function HomePage() {
       </header>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {products.map((product) => (
-          <div key={product.id} className="group cursor-pointer">
-            {/* Product Image */}
-            {product.img_url ? (
-              <div className="aspect-[3/4] bg-gray-100 mb-3 overflow-hidden border border-black">
-                <img
-                  src={product.img_url}
-                  alt={product.title || 'Product image'}
-                  className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
-                />
-              </div>
-            ) : (
-              <div className="aspect-[3/4] bg-gray-100 mb-3 flex items-center justify-center border border-black">
-                <span className="text-sm opacity-40">NO IMAGE</span>
-              </div>
-            )}
+      <ProductGrid products={products} />
+    </main>
+  )
+}
+```
 
-            {/* Product Info */}
-            <div className="text-sm space-y-1">
-              {/* Title */}
-              <div className="font-medium tracking-tight">
-                {product.title || 'Untitled'}
-              </div>
+---
 
-              {/* Price */}
-              <div className="opacity-60">
-                ${product.price || '0.00'}
-              </div>
+**Step 3: Update Homepage (Minimal)**
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 mt-2">
-                {product.category && (
-                  <span className="text-xs border border-black px-2 py-0.5 opacity-60">
-                    {product.category.name}
-                  </span>
-                )}
-                {product.size && (
-                  <span className="text-xs border border-black px-2 py-0.5 opacity-60">
-                    {product.size.name}
-                  </span>
-                )}
-                {product.tag && (
-                  <span className="text-xs border border-black px-2 py-0.5 opacity-60">
-                    {product.tag.name}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+**File:** `/app/page.tsx`
+
+```typescript
+import ProductPageClient from '@/components/ProductPageClient'
+
+export default function HomePage() {
+  return <ProductPageClient />
+}
+```
+
+---
+
+#### 3.2.4 Component Responsibilities
+
+**ProductGrid (`/components/ProductGrid.tsx`):**
+- ✅ Pure presentation component
+- ✅ Accepts products array as prop
+- ✅ Displays products in responsive grid
+- ✅ No data fetching logic
+- ✅ Reusable anywhere in the app
+- ✅ Can show filtered products, search results, etc.
+
+**ProductPageClient (`/components/ProductPageClient.tsx`):**
+- ✅ Client component (uses hooks)
+- ✅ Consumes ProductContext via useProducts()
+- ✅ Handles all states (loading/error/empty/success)
+- ✅ Contains page layout (header + grid)
+- ✅ Passes products to ProductGrid
+
+**HomePage (`/app/page.tsx`):**
+- ✅ Minimal page component
+- ✅ Server component (can be)
+- ✅ Simply renders ProductPageClient
+- ✅ Easy to add metadata, SEO, etc.
+
+---
+
+#### 3.2.5 Reusability Example
+
+**Future Usage:**
+
+```typescript
+// Filtered products page
+export default function FilteredPage() {
+  const { filterProducts } = useProducts()
+  const menProducts = filterProducts({ category: 'male-clothing' })
+
+  return (
+    <main>
+      <h1>Men's Clothing</h1>
+      <ProductGrid products={menProducts} />
+    </main>
+  )
+}
+
+// Search results page
+export default function SearchResults({ query }) {
+  const { products } = useProducts()
+  const results = products.filter(p =>
+    p.title?.toLowerCase().includes(query.toLowerCase())
+  )
+
+  return (
+    <main>
+      <h1>Search Results: {query}</h1>
+      <ProductGrid products={results} />
     </main>
   )
 }
@@ -585,11 +710,17 @@ const { data } = await supabase
     ├── useProducts hook
     └── Type definitions
 
+/components
+├── ProductGrid.tsx (NEW)
+│   └── Reusable product grid component
+└── ProductPageClient.tsx (NEW)
+    └── Homepage client component with state handling
+
 /app
 ├── layout.tsx (UPDATE)
 │   └── Wrap children with ProductProvider
 └── page.tsx (REPLACE)
-    └── Product grid component
+    └── Minimal - renders ProductPageClient
 
 /types
 └── database.ts (EXISTS)
@@ -650,17 +781,18 @@ interface Article {
 ### 5.3 Component Hierarchy
 
 ```
-RootLayout
+RootLayout (/app/layout.tsx)
 └── ProductProvider (Context)
-    └── HomePage
-        ├── Header
-        └── ProductGrid
-            └── ProductCard (repeated)
-                ├── ProductImage
-                └── ProductInfo
-                    ├── Title
-                    ├── Price
-                    └── Tags
+    └── HomePage (/app/page.tsx - Server Component)
+        └── ProductPageClient (/components/ProductPageClient.tsx - Client Component)
+            ├── Header
+            └── ProductGrid (/components/ProductGrid.tsx - Reusable)
+                └── ProductCard (repeated)
+                    ├── ProductImage
+                    └── ProductInfo
+                        ├── Title
+                        ├── Price
+                        └── Tags
 ```
 
 ---
@@ -701,22 +833,26 @@ RootLayout
 
 ---
 
-### Phase 3: Homepage Product Grid (Day 2)
+### Phase 3: Modular Components (Day 2)
 
 **Tasks:**
-1. Replace `/app/page.tsx`
-2. Implement loading state
-3. Implement error state
-4. Implement empty state
-5. Implement product grid
-6. Style with Tailwind classes
-7. Test responsive layout
+1. Create `/components/ProductGrid.tsx` (reusable grid)
+2. Create `/components/ProductPageClient.tsx` (state handling)
+3. Implement loading state
+4. Implement error state
+5. Implement empty state
+6. Implement product grid with Tailwind
+7. Update `/app/page.tsx` to render ProductPageClient
+8. Test responsive layout
 
 **Deliverables:**
-- ✅ Product grid displays
+- ✅ ProductGrid component created (reusable)
+- ✅ ProductPageClient component created
+- ✅ Homepage renders ProductPageClient
+- ✅ All states handled (loading/error/empty/success)
 - ✅ Responsive (mobile/tablet/desktop)
-- ✅ All states handled (loading/error/empty)
 - ✅ Styling matches admin reference
+- ✅ Components are modular and reusable
 
 ---
 
@@ -1000,6 +1136,7 @@ space-y-1                   // Vertical spacing between children
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-12-10 | Product Team | Initial PRD for product grid & context |
+| 1.1 | 2025-12-10 | Product Team | Updated to modular component architecture (ProductGrid + ProductPageClient) |
 
 **Approval:**
 
