@@ -1,5 +1,9 @@
-import ProductPageClient from '@/components/ProductPageClient'
+import ProductPageClient from "@/components/product-page/ProductPageClient";
 
-export default function HomePage() {
-  return <ProductPageClient />
+export default function Home() {
+  return (
+    <main>
+      <ProductPageClient />
+    </main>
+  );
 }
