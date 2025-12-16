@@ -3,6 +3,8 @@ import "./globals.css";
 import localFont from "next/font/local";
 import { SiteProvider } from "./context/SiteContext";
 import { ProductProvider } from "@/context/ProductContext";
+import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from "@/context/CartContext";
 import HeaderNav from "@/components/HeaderNav";
 
 export const gtSans = localFont({
@@ -84,12 +86,16 @@ export default function RootLayout({
       <body
         className={`${gtCompressed.variable} ${gtSans.variable} ${gtMono.variable} ${CLTSerifDensed.variable} ${CLTSerifRegular.variable} ${CLTSerifWide.variable} antialiased`}
       >
-        <ProductProvider>
-          <SiteProvider>
-            <HeaderNav />
-            {children}
-          </SiteProvider>
-        </ProductProvider>
+        <AuthProvider>
+          <CartProvider>
+            <ProductProvider>
+              <SiteProvider>
+                <HeaderNav />
+                {children}
+              </SiteProvider>
+            </ProductProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
