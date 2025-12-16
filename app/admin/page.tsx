@@ -1,9 +1,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import AdminDashboard from '@/components/AdminDashboard'
 
-export default async function AdminDashboard() {
+export default async function AdminPage() {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
 
@@ -39,32 +39,7 @@ export default async function AdminDashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl">
-          {/* Products Count */}
-          <div className="border border-black p-8">
-            <div className="text-sm mb-2 opacity-60">TOTAL PRODUCTS</div>
-            <div className="text-4xl">{totalProducts}</div>
-          </div>
-
-          {/* Add Product */}
-          <Link
-            href="/admin/products/add"
-            className="border border-black p-8 hover:bg-black hover:text-white transition-colors group"
-          >
-            <div className="text-sm mb-2 opacity-60 group-hover:opacity-100">
-              ADD NEW
-            </div>
-            <div className="text-4xl">+</div>
-          </Link>
-
-          {/* View Products */}
-          <Link
-            href="/admin/products"
-            className="border border-black p-8 hover:bg-black hover:text-white transition-colors"
-          >
-            <div className="text-sm mb-2">VIEW ALL PRODUCTS</div>
-          </Link>
-        </div>
+        <AdminDashboard totalProducts={totalProducts} />
       </div>
     </div>
   )

@@ -11,9 +11,10 @@ import type { Category, Tag, Size, Article, ProductMeasurements } from '@/types/
 interface ProductFormProps {
   mode: 'create' | 'edit'
   initialProduct?: Article
+  onSuccess?: () => void
 }
 
-export default function ProductForm({ mode, initialProduct }: ProductFormProps) {
+export default function ProductForm({ mode, initialProduct, onSuccess }: ProductFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -342,7 +343,11 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
           }
         }
 
-        router.push('/admin/products')
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push('/admin/products')
+        }
       } else {
         // Update existing product
         productId = initialProduct!.id!
@@ -395,7 +400,11 @@ export default function ProductForm({ mode, initialProduct }: ProductFormProps) 
           }
         }
 
-        router.push(`/admin/products/${productId}`)
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push(`/admin/products/${productId}`)
+        }
       }
 
       router.refresh()
