@@ -3,9 +3,13 @@
 import { Cross1Icon, HamburgerMenuIcon } from "@radix-ui/react-icons";
 import { Button } from "./ui/button";
 import { useSite } from "@/app/context/SiteContext";
+import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 function MenuOverlay({
   setOpen,
@@ -87,7 +91,15 @@ function MenuOverlay({
 
 export default function HeaderNav() {
   const { currentSite, toggleSite } = useSite();
+  const { itemCount } = useCart();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push('/');
+  };
 
   return (
     <>
@@ -96,9 +108,11 @@ export default function HeaderNav() {
         className={`bg-white fixed z-30 top-0 left-0 grid grid-cols-2 lg:grid-cols-6`}
       >
         <div className="flex  w-full    ">
-          <Button variant="ghost" size="sm" className="font-mono text-xs">
-            JOJO STUDIO
-          </Button>
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="font-mono text-xs">
+              JOJO STUDIO
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="sm"
@@ -133,13 +147,33 @@ export default function HeaderNav() {
         className={`bg-white fixed z-40 top-0  right-0 flex justify-between   rounded-none items-center`}
       >
         <span className="flex justify-end ">
-          <Button variant="ghost" size="sm" className="font-mono text-xs ">
-            Log In
-          </Button>
+          {user ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="font-mono text-xs"
+              onClick={handleLogout}
+            >
+              Log Out
+            </Button>
+          ) : (
+            <Link href="/login">
+              <Button variant="ghost" size="sm" className="font-mono text-xs ">
+                Log In
+              </Button>
+            </Link>
+          )}
 
-          <Button variant="ghost" size="sm" className="font-mono text-xs">
-            Cart
-          </Button>
+          <Link href="/checkout">
+            <Button variant="ghost" size="sm" className="font-mono text-xs relative">
+              Cart
+              {itemCount > 0 && (
+                <span className="ml-1 text-[10px] bg-black text-white rounded-full w-4 h-4 flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </Button>
+          </Link>
 
           <Button
             onClick={() => setOpen(!open)}

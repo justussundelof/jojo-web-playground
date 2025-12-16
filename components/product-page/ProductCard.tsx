@@ -1,13 +1,18 @@
+'use client'
+
 import { Card, CardContent, CardDescription } from "../ui/card";
 import Image from "next/image";
 import type { Article } from "@/types/database";
 import { optimizeCloudinaryImage } from "@/utils/cloudinary";
+import { useCart } from "@/context/CartContext";
+import { Button } from "../ui/button";
 
 interface ProductCardProps {
   product: Article;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { addItem, isInCart, getItemQuantity } = useCart();
   const productPrice = `${product.price || 0} SEK`;
   const aspectClass = "aspect-[3/4]";
 
@@ -21,6 +26,18 @@ export default function ProductCard({ product }: ProductCardProps) {
         gravity: "auto",
       })
     : null;
+
+  const handleAddToCart = () => {
+    if (product.id && product.title && product.price) {
+      addItem({
+        productId: product.id,
+        name: product.title,
+        price: product.price,
+        quantity: 1,
+        image: imageUrl || '/placeholder.png',
+      });
+    }
+  };
 
   return (
     <Card className={`w-full `}>
@@ -45,6 +62,16 @@ export default function ProductCard({ product }: ProductCardProps) {
         <h4 className="flex w-full justify-between items-baseline font-mono ">
           {productPrice}
         </h4>
+        <Button
+          onClick={handleAddToCart}
+          size="sm"
+          variant={isInCart(product.id || 0) ? "outline" : "default"}
+          className="w-full mt-2"
+        >
+          {isInCart(product.id || 0)
+            ? `In Cart (${getItemQuantity(product.id || 0)})`
+            : 'Add to Cart'}
+        </Button>
       </CardDescription>
     </Card>
   );
