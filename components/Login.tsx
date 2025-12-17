@@ -44,17 +44,20 @@ export default function Login({
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    const { error, data } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+
       // Fetch user profile to get role
       let { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -91,6 +94,8 @@ export default function Login({
         }
       } else if (profileError) {
         console.error('Login - Error fetching profile:', profileError);
+        // If there's an infinite recursion error, just skip the role check
+        // and let them log in anyway - they'll be treated as regular user
       }
 
       // Always close modal and redirect, even if profile fetch failed
@@ -105,6 +110,10 @@ export default function Login({
       }
 
       router.refresh();
+    } catch (err) {
+      console.error('Unexpected error in handleLogin:', err);
+      setError('An unexpected error occurred. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -114,29 +123,32 @@ export default function Login({
     setError(null);
     setSuccess(null);
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
+    try {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        setLoading(false);
+        return;
+      }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      setLoading(false);
-      return;
-    }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters");
+        setLoading(false);
+        return;
+      }
 
-    const supabase = createClient();
+      const supabase = createClient();
 
-    const { error, data } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+      const { error, data } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+
       // Create profile if it doesn't exist (fallback if trigger doesn't work)
       if (data.user) {
         const { error: profileError } = await supabase
@@ -150,6 +162,7 @@ export default function Login({
         // Ignore error if profile already exists (trigger worked)
         if (profileError && profileError.code !== '23505') {
           console.error('Error creating profile:', profileError);
+          // Don't fail signup if profile creation fails
         }
       }
 
@@ -159,6 +172,10 @@ export default function Login({
       setTimeout(() => {
         switchView("sign-in");
       }, 3000);
+    } catch (err) {
+      console.error('Unexpected error in handleSignUp:', err);
+      setError('An unexpected error occurred. Please try again.');
+      setLoading(false);
     }
   };
 
