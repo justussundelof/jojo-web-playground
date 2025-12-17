@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "./ui/button";
-import { useSite } from "@/app/context/SiteContext";
+import { useSite } from "@/context/SiteContext";
 import { useState, useEffect } from "react";
 
 import Link from "next/link";

@@ -1,16 +1,23 @@
 "use client";
 
-import { Card, CardContent } from "../ui/card";
+import { Card, CardAction, CardContent, CardDescription } from "../ui/card";
 import Image from "next/image";
 import type { Product } from "@/types/product";
 import { optimizeCloudinaryImage } from "@/utils/cloudinary";
 import { motion } from "framer-motion";
+import { Badge } from "../ui/badge";
 
 interface ProductCardProps {
   product: Product;
+  showText: boolean;
+  setShowText: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  showText,
+  setShowText,
+}: ProductCardProps) {
   const imageUrl = product.img_url
     ? optimizeCloudinaryImage(product.img_url, {
         width: 800,
@@ -58,6 +65,21 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
         {/* MOBILE INFO – always visible */}
+        {showText && (
+          <CardDescription className="flex flex-col">
+            <h2 className="text-sm font-serif-book truncate w-2/3">
+              {product.title}
+            </h2>
+            <span className="flex gap-x-3 items-baseline">
+              <p className="text-xs font-mono uppercase">{product.price} SEK</p>
+              {product.size && (
+                <p className="text-xs font-serif-display uppercase text-muted ">
+                  {product.size.name}
+                </p>
+              )}
+            </span>
+          </CardDescription>
+        )}
 
         {/* HOVER INFO OVERLAY (desktop only) */}
       </Card>

@@ -2,13 +2,10 @@ export default function About() {
   return (
     <div className="mt-8 grid grid-cols-2 gap-x-12 items-start justify-start bg-popover text-popover-foreground  ">
       <div className="col-span-2 lg:col-span-1 flex flex-col px-6 pt-12 pb-24">
-        <h1 className="text-2xl lg:text-4xl font-serif-display leading-tight ">
-          JOJO Studio —
-          <strong className="font-normal font-serif-display-italic">
-            Italian 90s/00s vintage — handpicked, sustainable, unmistakably
-            JOJO.
-          </strong>
-        </h1>
+        <h1 className="font-serif-display  leading-tight ">JOJO Studio</h1>
+        <h2 className="font-normal font-serif-display-italic">
+          Italian 90s/00s vintage — handpicked, sustainable, unmistakably JOJO.
+        </h2>
 
         <p className=" text-2xl font-serif-book mt-4">
           JOJO Studio is a vintage store located in the heart of Södermalm,

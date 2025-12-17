@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useSite } from "@/app/context/SiteContext";
+import { useSite } from "@/context/SiteContext";
 
 export default function LoaderGIF() {
   const { currentSite } = useSite();

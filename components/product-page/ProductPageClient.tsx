@@ -1,6 +1,6 @@
 "use client";
 
-import { useSite } from "@/app/context/SiteContext";
+import { useSite } from "@/context/SiteContext";
 import ProductsGrid from "./ProductsGrid";
 import SiteSelector from "../SiteSelector";
 import { useState, useEffect } from "react";

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import localFont from "next/font/local";
-import { SiteProvider } from "./context/SiteContext";
+import { SiteProvider } from "../context/SiteContext";
 import HeaderNav from "@/components/HeaderNav";
 
 import { ThemeProvider } from "next-themes";

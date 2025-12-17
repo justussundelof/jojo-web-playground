@@ -2,7 +2,7 @@
 
 import { motion, type Variants } from "framer-motion";
 import { Button } from "./ui/button";
-import { useSite } from "@/app/context/SiteContext";
+import { useSite } from "@/context/SiteContext";
 
 const containerVariants: Variants = {
   hidden: {},

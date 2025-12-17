@@ -42,7 +42,7 @@ const ProductInlinePanel = forwardRef<HTMLDivElement, ProductInlinePanelProps>(
       >
         <Button
           onClick={onClose}
-          className="absolute top-2 right-2 z-10"
+          className="absolute top-2 right-2 z-10 invert"
           variant="link"
           size="sm"
         >

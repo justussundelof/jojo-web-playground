@@ -4,13 +4,14 @@ import ProductCard from "./ProductCard";
 import { useState, useEffect } from "react";
 import { Button, type buttonVariants } from "../ui/button";
 import type { VariantProps } from "class-variance-authority";
-import { useSite } from "@/app/context/SiteContext";
+import { useSite } from "@/context/SiteContext";
 import { useProducts } from "@/context/ProductContext";
 import { Fragment } from "react";
 import ProductInlinePanel from "./ProductInlinePanel";
 import { motion, type Variants, LayoutGroup } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useRef } from "react";
+import { Badge } from "../ui/badge";
 
 import LoaderGIF from "../LoaderGIF";
 
@@ -86,6 +87,11 @@ export default function ProductsGrid({}: {}) {
   }, [activeProduct]);
 
   const [layoutIndex, setLayoutIndex] = useState<number>(1);
+  const [showText, setShowText] = useState(false);
+
+  const handleShowText = () => {
+    setShowText((prev) => !prev);
+  };
 
   const layouts = [
     "grid-cols-4 lg:grid-cols-8 grid-rows-auto   auto-rows-fr",
@@ -130,16 +136,20 @@ export default function ProductsGrid({}: {}) {
     <LayoutGroup>
       <div className="relative w-full overflow-visible">
         {/* Sticky header outside the motion/grid */}
-        <div className="sticky top-[10vh] lg:top-[20vh] z-30 bg-background shadow w-full">
-          <div className="flex justify-between items-start font-mono text-xs gap-3 w-full px-3">
-            <span className="flex items-start font-mono text-xs gap-3">
-              <Button size="sm" variant="link">
-                FILTER
-              </Button>
-              <Button size="sm" variant="link">
+        <div className="sticky top-[10vh] lg:top-[20vh] z-30 bg-background shadow w-full py-1">
+          <div className="flex justify-between items-baseline font-mono text-xs gap-3 w-full px-3">
+            <span className="flex items-baseline font-mono text-xs gap-3">
+              <Badge>FILTER</Badge>
+              <Badge variant="ghost">
                 Latest Added <span>[x]</span>
-              </Button>
+              </Badge>
             </span>
+            <Badge
+              variant={`${showText ? "default" : "outline"}`}
+              onClick={handleShowText}
+            >
+              T
+            </Badge>
           </div>
         </div>
         <motion.div
@@ -156,7 +166,12 @@ export default function ProductsGrid({}: {}) {
                 layoutId={`product-${product.id}`} // Ensure product.id is always a number
                 onClick={() => setActiveProduct(Number(product.id))}
               >
-                <ProductCard key={product.id} product={product} />
+                <ProductCard
+                  showText={showText}
+                  setShowText={setShowText}
+                  key={product.id}
+                  product={product}
+                />
               </motion.div>
 
               {activeProduct === product.id && (
