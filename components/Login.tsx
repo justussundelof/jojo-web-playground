@@ -62,8 +62,11 @@ export default function Login({
         .eq('id', data.user.id)
         .single();
 
+      console.log('Login - Profile fetch:', { profile, profileError });
+
       // If profile doesn't exist, create one with default 'user' role
       if (profileError && profileError.code === 'PGRST116') {
+        console.log('Login - Creating profile...');
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({
@@ -73,20 +76,26 @@ export default function Login({
           });
 
         if (insertError) {
-          console.error('Error creating profile:', insertError);
+          console.error('Login - Error creating profile:', insertError);
+        } else {
+          console.log('Login - Profile created, fetching again...');
+          // Fetch the profile again after creating it
+          const result = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', data.user.id)
+            .single();
+
+          console.log('Login - Profile after creation:', result);
+          profile = result.data;
         }
-
-        // Fetch the profile again after creating it
-        const result = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-
-        profile = result.data;
+      } else if (profileError) {
+        console.error('Login - Error fetching profile:', profileError);
       }
 
+      // Always close modal and redirect, even if profile fetch failed
       setOpenLogin(false);
+      setLoading(false);
 
       // Redirect based on role (default to home if no profile)
       if (profile?.role === 'admin') {
