@@ -66,53 +66,37 @@ export default function Login({
         .single();
 
       console.log('Login - Profile fetch:', { profile, profileError });
-      console.log('Login - About to check profile error...');
+
+      // CRITICAL: Close modal and stop loading IMMEDIATELY to prevent hang
+      // Do this BEFORE any async operations or navigation
+      setOpenLogin(false);
+      setLoading(false);
+      console.log('Login - Modal closed and loading stopped immediately');
 
       // If profile doesn't exist, create one with default 'user' role
       if (profileError && profileError.code === 'PGRST116') {
         console.log('Login - Creating profile...');
-        const { error: insertError } = await supabase
+        await supabase
           .from('profiles')
           .insert({
             id: data.user.id,
             email: data.user.email,
             role: 'user'
           });
-
-        if (insertError) {
-          console.error('Login - Error creating profile:', insertError);
-        } else {
-          console.log('Login - Profile created, fetching again...');
-          // Fetch the profile again after creating it
-          const result = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
-
-          console.log('Login - Profile after creation:', result);
-          profile = result.data;
-        }
       } else if (profileError) {
         console.error('Login - Error fetching profile:', profileError);
-        // If there's an infinite recursion error, just skip the role check
-        // and let them log in anyway - they'll be treated as regular user
       }
-
-      console.log('Login - About to close modal and stop loading...');
-      // Always close modal and redirect, even if profile fetch failed
-      setOpenLogin(false);
-      setLoading(false);
-      console.log('Login - Modal closed, loading stopped');
 
       // Redirect based on role (default to home if no profile)
-      if (profile?.role === 'admin') {
-        router.push("/admin");
-      } else {
-        router.push("/");
-      }
-
-      router.refresh();
+      // Use setTimeout to ensure modal closes first
+      setTimeout(() => {
+        if (profile?.role === 'admin') {
+          router.push("/admin");
+        } else {
+          router.push("/");
+        }
+        router.refresh();
+      }, 100);
     } catch (err) {
       console.error('Unexpected error in handleLogin:', err);
       setError('An unexpected error occurred. Please try again.');
