@@ -56,11 +56,22 @@ export default function Login({
       setLoading(false);
     } else {
       // Fetch user profile to get role
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
         .single();
+
+      // If profile doesn't exist, create one with default 'user' role
+      if (profileError && profileError.code === 'PGRST116') {
+        await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            email: data.user.email,
+            role: 'user'
+          });
+      }
 
       setOpenLogin(false);
 
