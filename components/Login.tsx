@@ -22,6 +22,8 @@ export default function Login({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,8 @@ export default function Login({
     setEmail("");
     setPassword("");
     setConfirmPassword("");
+    setFirstName("");
+    setLastName("");
     setError(null);
     setSuccess(null);
   };
@@ -44,17 +48,20 @@ export default function Login({
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    const { error, data } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+
       // Fetch user profile to get role
       let { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -64,47 +71,40 @@ export default function Login({
 
       console.log('Login - Profile fetch:', { profile, profileError });
 
+      // CRITICAL: Close modal and stop loading IMMEDIATELY to prevent hang
+      // Do this BEFORE any async operations or navigation
+      setOpenLogin(false);
+      setLoading(false);
+      console.log('Login - Modal closed and loading stopped immediately');
+
       // If profile doesn't exist, create one with default 'user' role
       if (profileError && profileError.code === 'PGRST116') {
         console.log('Login - Creating profile...');
-        const { error: insertError } = await supabase
+        await supabase
           .from('profiles')
           .insert({
             id: data.user.id,
             email: data.user.email,
             role: 'user'
           });
-
-        if (insertError) {
-          console.error('Login - Error creating profile:', insertError);
-        } else {
-          console.log('Login - Profile created, fetching again...');
-          // Fetch the profile again after creating it
-          const result = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
-
-          console.log('Login - Profile after creation:', result);
-          profile = result.data;
-        }
       } else if (profileError) {
         console.error('Login - Error fetching profile:', profileError);
       }
 
-      // Always close modal and redirect, even if profile fetch failed
-      setOpenLogin(false);
-      setLoading(false);
-
       // Redirect based on role (default to home if no profile)
-      if (profile?.role === 'admin') {
-        router.push("/admin");
-      } else {
-        router.push("/");
-      }
-
-      router.refresh();
+      // Use setTimeout to ensure modal closes first
+      setTimeout(() => {
+        if (profile?.role === 'admin') {
+          router.push("/admin");
+        } else {
+          router.push("/");
+        }
+        router.refresh();
+      }, 100);
+    } catch (err) {
+      console.error('Unexpected error in handleLogin:', err);
+      setError('An unexpected error occurred. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -114,29 +114,32 @@ export default function Login({
     setError(null);
     setSuccess(null);
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
+    try {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        setLoading(false);
+        return;
+      }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      setLoading(false);
-      return;
-    }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters");
+        setLoading(false);
+        return;
+      }
 
-    const supabase = createClient();
+      const supabase = createClient();
 
-    const { error, data } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+      const { error, data } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+
       // Create profile if it doesn't exist (fallback if trigger doesn't work)
       if (data.user) {
         const { error: profileError } = await supabase
@@ -144,12 +147,15 @@ export default function Login({
           .insert({
             id: data.user.id,
             email: data.user.email,
+            first_name: firstName,
+            last_name: lastName,
             role: 'user'
           });
 
         // Ignore error if profile already exists (trigger worked)
         if (profileError && profileError.code !== '23505') {
           console.error('Error creating profile:', profileError);
+          // Don't fail signup if profile creation fails
         }
       }
 
@@ -159,6 +165,10 @@ export default function Login({
       setTimeout(() => {
         switchView("sign-in");
       }, 3000);
+    } catch (err) {
+      console.error('Unexpected error in handleSignUp:', err);
+      setError('An unexpected error occurred. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -257,6 +267,28 @@ export default function Login({
             {success}
           </div>
         )}
+
+        <div>
+          <Input
+            type="text"
+            placeholder="First Name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            className="max-w-sm"
+          />
+        </div>
+
+        <div>
+          <Input
+            type="text"
+            placeholder="Last Name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+            className="max-w-sm"
+          />
+        </div>
 
         <div>
           <Input
