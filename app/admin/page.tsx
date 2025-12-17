@@ -3,8 +3,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import AdminProductGrid from "@/components/AdminProductGrid";
+import AdminDashboard from "@/components/AdminDashboard";
 
-export default async function AdminDashboard() {
+export default async function AdminPage() {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -15,18 +16,6 @@ export default async function AdminDashboard() {
   if (!user) {
     redirect("/");
   }
-
-  // Check if user is admin
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
-    redirect("/");
-  }
-
 
   // Fetch products with joined category, tag, and size data
   const { data: products } = await supabase
@@ -47,25 +36,10 @@ export default async function AdminDashboard() {
       {/* Header */}
 
       {/* Main Content */}
-      <div className="pt-[10vh] lg:pt-[20vh] pl-0 lg:pl-14 w-full flex-col bg-background">
-        <div className="flex flex-col pl:0 lg:flex-row lg:pl-3">
-          <span className="flex flex-col px-3 py-9  gap-x-3 space-y-1.5 mb-12 ">
-            <h1 className="text-xl font-serif-display  ">
-              Welcome dear
-              <strong className="ml-1.5 font-normal ">JOJO Studio Admin</strong>
-              !
-            </h1>
-            <p className="font-serif-book max-w-sm">
-              This is the admin page where the magic happens. Here you can add
-              products, edit content and more. <br /> Have fun!
-            </p>
-          </span>
-        </div>
-
-        {!products || products.length === 0 ? null : (
-          <AdminProductGrid products={products} />
-        )}
-      </div>
+      <AdminDashboard />
+      {!products || products.length === 0 ? null : (
+        <AdminProductGrid products={products} />
+      )}
     </div>
   );
 }

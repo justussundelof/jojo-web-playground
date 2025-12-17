@@ -138,8 +138,8 @@ export default function ProductsGrid({}: {}) {
         {/* Sticky header outside the motion/grid */}
         <div className="sticky top-8 z-30 bg-background shadow w-full py-1">
           <div className=" flex justify-between items-baseline font-mono text-xs gap-3 w-full ">
-            <span className="flex items-baseline font-mono text-xs gap-3">
-              <Badge>FILTER</Badge>
+            <span className="flex items-baseline font-mono text-xs gap-1">
+              <Badge variant="outline">FILTER</Badge>
               <Badge variant="ghost">
                 Latest Added <span>[x]</span>
               </Badge>

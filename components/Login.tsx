@@ -46,7 +46,7 @@ export default function Login({
 
     const supabase = createClient();
 
-    const { error, data } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -55,55 +55,8 @@ export default function Login({
       setError(error.message);
       setLoading(false);
     } else {
-      // Fetch user profile to get role
-      let { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      console.log('Login - Profile fetch:', { profile, profileError });
-
-      // If profile doesn't exist, create one with default 'user' role
-      if (profileError && profileError.code === 'PGRST116') {
-        console.log('Login - Creating profile...');
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            role: 'user'
-          });
-
-        if (insertError) {
-          console.error('Login - Error creating profile:', insertError);
-        } else {
-          console.log('Login - Profile created, fetching again...');
-          // Fetch the profile again after creating it
-          const result = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
-
-          console.log('Login - Profile after creation:', result);
-          profile = result.data;
-        }
-      } else if (profileError) {
-        console.error('Login - Error fetching profile:', profileError);
-      }
-
-      // Always close modal and redirect, even if profile fetch failed
       setOpenLogin(false);
-      setLoading(false);
-
-      // Redirect based on role (default to home if no profile)
-      if (profile?.role === 'admin') {
-        router.push("/admin");
-      } else {
-        router.push("/");
-      }
-
+      router.push("/admin");
       router.refresh();
     }
   };
@@ -128,7 +81,7 @@ export default function Login({
 
     const supabase = createClient();
 
-    const { error, data } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -137,22 +90,6 @@ export default function Login({
       setError(error.message);
       setLoading(false);
     } else {
-      // Create profile if it doesn't exist (fallback if trigger doesn't work)
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            role: 'user'
-          });
-
-        // Ignore error if profile already exists (trigger worked)
-        if (profileError && profileError.code !== '23505') {
-          console.error('Error creating profile:', profileError);
-        }
-      }
-
       setSuccess("Account created! Please check your email to verify your account.");
       setLoading(false);
       // Optionally auto-switch to sign-in after a delay
