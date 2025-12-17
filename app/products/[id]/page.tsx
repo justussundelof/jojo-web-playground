@@ -140,7 +140,7 @@ export default async function ProductPage({
                       ([key, value]) => (
                         <div key={key} className="flex justify-between">
                           <span className="opacity-60 capitalize">{key}:</span>
-                          <span>{value}</span>
+                          <span>{String(value)}</span>
                         </div>
                       )
                     )}
