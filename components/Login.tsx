@@ -106,7 +106,7 @@ export default function Login({
 
     const supabase = createClient();
 
-    const { error } = await supabase.auth.signUp({
+    const { error, data } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -115,6 +115,22 @@ export default function Login({
       setError(error.message);
       setLoading(false);
     } else {
+      // Create profile if it doesn't exist (fallback if trigger doesn't work)
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            email: data.user.email,
+            role: 'user'
+          });
+
+        // Ignore error if profile already exists (trigger worked)
+        if (profileError && profileError.code !== '23505') {
+          console.error('Error creating profile:', profileError);
+        }
+      }
+
       setSuccess("Account created! Please check your email to verify your account.");
       setLoading(false);
       // Optionally auto-switch to sign-in after a delay
