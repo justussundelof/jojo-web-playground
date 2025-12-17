@@ -66,6 +66,7 @@ export default function Login({
         .single();
 
       console.log('Login - Profile fetch:', { profile, profileError });
+      console.log('Login - About to check profile error...');
 
       // If profile doesn't exist, create one with default 'user' role
       if (profileError && profileError.code === 'PGRST116') {
@@ -98,9 +99,11 @@ export default function Login({
         // and let them log in anyway - they'll be treated as regular user
       }
 
+      console.log('Login - About to close modal and stop loading...');
       // Always close modal and redirect, even if profile fetch failed
       setOpenLogin(false);
       setLoading(false);
+      console.log('Login - Modal closed, loading stopped');
 
       // Redirect based on role (default to home if no profile)
       if (profile?.role === 'admin') {
