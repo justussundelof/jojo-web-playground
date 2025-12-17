@@ -2,6 +2,7 @@
 
 import { Button } from "./ui/button";
 import { useSite } from "@/context/SiteContext";
+import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 
 import Link from "next/link";
@@ -9,7 +10,7 @@ import ThemeSwitch from "./ThemeSwitch";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import Login from "./Login";
 import MenuOverlay from "./MenuOverlay";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const headerVariants: Variants = {
   hidden: {},
@@ -38,6 +39,8 @@ const headerItemVariants: Variants = {
 
 export default function HeaderNav() {
   const { currentSite, toggleSite } = useSite();
+  const { user, profile, signOut } = useAuth();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [openLogin, setOpenLogin] = useState(false);
   const [admin, setAdmin] = useState(false);
@@ -47,6 +50,12 @@ export default function HeaderNav() {
   useEffect(() => {
     setAdmin(ifAdmin);
   }, [ifAdmin]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <>
@@ -95,11 +104,11 @@ export default function HeaderNav() {
 
             <motion.div variants={headerItemVariants}>
               <Button
-                onClick={() => setOpenLogin(!openLogin)}
+                onClick={user ? handleSignOut : () => setOpenLogin(!openLogin)}
                 variant="link"
                 size="sm"
               >
-                Log In
+                {user ? "Sign Out" : "Sign In"}
               </Button>
             </motion.div>
             <motion.div variants={headerItemVariants}>
