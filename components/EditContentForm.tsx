@@ -71,8 +71,8 @@ export default function EditContentForm({ pageSlug }: EditContentFormProps) {
   if (!page) return <p>Page not found.</p>;
 
   return (
-    <form className="space-y-6" onSubmit={handleSave}>
-      <div>
+    <form className="space-y-6 w-full" onSubmit={handleSave}>
+      <div className="w-full">
         <Label htmlFor="title">Title</Label>
         <Input
           id="title"
@@ -81,7 +81,7 @@ export default function EditContentForm({ pageSlug }: EditContentFormProps) {
         />
       </div>
 
-      <div>
+      <div className="w-full">
         <Label htmlFor="content">Content (Text)</Label>
         <Textarea
           id="content"
@@ -91,7 +91,7 @@ export default function EditContentForm({ pageSlug }: EditContentFormProps) {
         />
       </div>
 
-      <div>
+      <div className="w-full">
         <Label htmlFor="content_html">Content (HTML)</Label>
         <Textarea
           id="content_html"
@@ -101,7 +101,7 @@ export default function EditContentForm({ pageSlug }: EditContentFormProps) {
         />
       </div>
 
-      <div>
+      <div className="w-full">
         <Label htmlFor="seo_title">SEO Title</Label>
         <Input
           id="seo_title"
@@ -110,7 +110,7 @@ export default function EditContentForm({ pageSlug }: EditContentFormProps) {
         />
       </div>
 
-      <div>
+      <div className="w-full">
         <Label htmlFor="seo_description">SEO Description</Label>
         <Textarea
           id="seo_description"

@@ -69,31 +69,6 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
   return (
     <div className="relative w-full bg-background">
       {openForm && <ProductForm toggleForm={toggleForm} mode="create" />}
-      <div className="sticky  top-16 lg:top-8 left-0 right-0 z-30  shadow w-full  bg-background">
-        <div className="flex justify-between items-start font-serif-book text-xs  w-full ">
-          <span className="flex items-center gap-3 w-1/2">
-            <Button
-              size="sm"
-              variant="link"
-              onClick={() => setOpenForm(true)}
-              className=""
-            >
-              Add Product
-            </Button>
-          </span>
-          <span className="flex items-start justify-between font-mono text-xs gap-3 w-1/2">
-            <Button size="sm" variant="link">
-              Filter
-            </Button>
-
-            <ToggleGridColsButton
-              layouts={layouts}
-              setLayoutIndex={setLayoutIndex}
-              buttonText="[+/-]"
-            />
-          </span>
-        </div>
-      </div>
 
       <motion.div
         key={`-${layoutIndex}`}
@@ -106,12 +81,12 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
           // Optimize image URL if available
           const imageUrl = product.img_url
             ? optimizeCloudinaryImage(product.img_url, {
-              width: 600,
-              height: 800,
-              quality: "auto",
-              crop: "fill",
-              gravity: "auto",
-            })
+                width: 600,
+                height: 800,
+                quality: "auto",
+                crop: "fill",
+                gravity: "auto",
+              })
             : null;
 
           return (
@@ -124,7 +99,12 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
                 href={`/admin/product/${product.id}`}
                 className="group cursor-pointer"
               >
-                <ProductCard product={product} showText={showText} setShowText={setShowText} />              </Link>
+                <ProductCard
+                  product={product}
+                  showText={showText}
+                  setShowText={setShowText}
+                />{" "}
+              </Link>
             </motion.div>
           );
         })}

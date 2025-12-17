@@ -494,15 +494,13 @@ export default function ProductForm({
 
   return (
     <form
-      className="fixed top-14 left-0  lg:top-8 z-40 bg-background border-r border-b w-full  h-screen 
-    overflow-y-auto grid grid-cols-1 lg:grid-cols-2 pl-0 pr-0 pt-3 lg:pl-14 lg:pt-6   pb-3    "
+      className="fixed top-10 left-10  lg:top-10 z-40    max-w-7xl h-screen 
+    overflow-y-auto grid grid-cols-1 lg:grid-cols-2   bg-background "
       onSubmit={handleSubmit}
     >
       <div className="col-start-1 col-span-2 flex justify-between items-center w-full ">
-        <h1 className=" font-serif-book text-sm pl-3 pt-3 ">Add Product</h1>
-
         <Button onClick={toggleForm} variant="link" className="">
-          Close [x]
+          Close
         </Button>
       </div>
 

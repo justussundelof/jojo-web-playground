@@ -2,8 +2,8 @@
 
 import { Button } from "./ui/button";
 import { useSite } from "@/context/SiteContext";
-import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 import Link from "next/link";
 import ThemeSwitch from "./ThemeSwitch";
@@ -61,16 +61,22 @@ export default function HeaderNav() {
     <>
       {/* TOP PART OF HEADER */}
       <header
-        className={` ${
-          admin ? " pl-3 lg:pl-12 bg-background" : "pl-3 bg-background"
-        } fixed z-40 top-0 left-0  right-0 w-full pr-3 pt-1 bg-background h-9`}
+        className={` ${admin ? " pl-3 lg:pl-12 bg-background" : "pl-3 bg-background"
+          } fixed z-40 top-0 left-0  right-0 w-full pr-3 pt-1 bg-background h-9`}
       >
         <span className="flex justify-between items-baseline w-full ">
-          <Link href="/">
-            <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center  leading-tight    ">
-              JOJO STUDIO
-            </h1>
-          </Link>
+          <div className="flex items-center gap-3 px-3">
+            <Link href="/">
+              <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center leading-tight">
+                JOJO STUDIO
+              </h1>
+            </Link>
+            {user && profile?.first_name && (
+              <span className="text-xs font-serif-book opacity-60">
+                Hi, {profile.first_name}
+              </span>
+            )}
+          </div>
 
           <motion.div
             variants={headerVariants}
@@ -104,12 +110,10 @@ export default function HeaderNav() {
 
             <motion.div variants={headerItemVariants}>
               <Button
-                onClick={user ? handleSignOut : () => setOpenLogin(!openLogin)}
-                variant="link"
+                onClick={user ? handleSignOut : () => setOpenLogin(!openLogin)} variant="link"
                 size="sm"
               >
-                {user ? "Sign Out" : "Sign In"}
-              </Button>
+                {user ? "Sign Out" : "Sign In"}              </Button>
             </motion.div>
             <motion.div variants={headerItemVariants}>
               <Button variant="link" size="sm" className="">
