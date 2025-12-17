@@ -46,7 +46,7 @@ export default function Login({
 
     const supabase = createClient();
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -55,8 +55,22 @@ export default function Login({
       setError(error.message);
       setLoading(false);
     } else {
+      // Fetch user profile to get role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
       setOpenLogin(false);
-      router.push("/admin");
+
+      // Redirect based on role
+      if (profile?.role === 'admin') {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
+
       router.refresh();
     }
   };

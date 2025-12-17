@@ -16,6 +16,17 @@ export default async function AdminDashboard() {
     redirect("/");
   }
 
+  // Check if user is admin
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    redirect("/");
+  }
+
   // Fetch products with joined category, tag, and size data
   const { data: products } = await supabase
     .from("article")
