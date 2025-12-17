@@ -1,13 +1,30 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import type { Tag } from '@/types/database'
+import { useState } from "react";
+import type { Tag } from "@/types/database";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "./ui/input";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardAction,
+  CardTitle,
+} from "./ui/card";
 
 interface TagSelectProps {
-  tags: Tag[]
-  selectedTagId: string
-  onChange: (tagId: string) => void
-  onTagCreated: (newTag: Tag) => void
+  tags: Tag[];
+  selectedTagId: string;
+  onChange: (tagId: string) => void;
+  onTagCreated: (newTag: Tag) => void;
 }
 
 export default function TagSelect({
@@ -16,161 +33,139 @@ export default function TagSelect({
   onChange,
   onTagCreated,
 }: TagSelectProps) {
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [newTagName, setNewTagName] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) {
-      setError('Tag name is required')
-      return
+      setError("Tag name is required");
+      return;
     }
 
-    setIsCreating(true)
-    setError(null)
+    setIsCreating(true);
+    setError(null);
 
     try {
-      const response = await fetch('/api/tags', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newTagName.trim() }),
-      })
+      });
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create tag')
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create tag");
       }
 
-      const newTag = await response.json()
+      const newTag: Tag = await response.json();
 
-      // Notify parent component of new tag
-      onTagCreated(newTag)
+      onTagCreated(newTag);
+      onChange(newTag.id.toString());
 
-      // Auto-select the newly created tag
-      onChange(newTag.id.toString())
-
-      // Close modal and reset
-      setShowCreateModal(false)
-      setNewTagName('')
-      setError(null)
+      setShowCreateModal(false);
+      setNewTagName("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create tag')
+      setError(err instanceof Error ? err.message : "Failed to create tag");
     } finally {
-      setIsCreating(false)
+      setIsCreating(false);
     }
-  }
+  };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value
-
-    if (value === '__create_new__') {
-      setShowCreateModal(true)
-    } else {
-      onChange(value)
+  const handleValueChange = (value: string) => {
+    if (value === "__create_new__") {
+      setShowCreateModal(true);
+      return;
     }
-  }
+
+    onChange(value);
+  };
 
   const handleCloseModal = () => {
-    setShowCreateModal(false)
-    setNewTagName('')
-    setError(null)
-  }
+    setShowCreateModal(false);
+    setNewTagName("");
+    setError(null);
+  };
 
   return (
     <>
-      <select
-        value={selectedTagId}
-        onChange={handleSelectChange}
-        className="w-full px-4 py-3 border border-black focus:outline-none bg-white"
-      >
-        <option value="">Select tag</option>
-        {tags.map((tag) => (
-          <option key={tag.id} value={tag.id}>
-            {tag.name}
-          </option>
-        ))}
-        <option value="__create_new__" className="font-medium">
-          + Skapa ny tagg
-        </option>
-      </select>
+      {/* Tag Select */}
+      <Select value={selectedTagId} onValueChange={handleValueChange}>
+        <SelectTrigger className="">
+          <SelectValue placeholder="Select tag" />
+        </SelectTrigger>
+
+        <SelectContent>
+          {tags.map((tag) => (
+            <SelectItem key={tag.id} value={tag.id.toString()}>
+              {tag.name}
+            </SelectItem>
+          ))}
+
+          <SelectItem value="__create_new__" className="font-medium">
+            + Skapa ny tagg
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Create Tag Modal */}
       {showCreateModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="absolute z-10 mt-3 max-w-lg w-full   "
           onClick={handleCloseModal}
         >
-          <div
-            className="bg-white border-2 border-black max-w-md w-full"
+          <Card
+            className="bg-background    font-serif-book text-sm py-9 px-3 w-full h-full flex flex-col space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="border-b border-black px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg tracking-tight">Skapa ny tagg</h2>
-              <button
-                onClick={handleCloseModal}
-                className="text-xl hover:opacity-50 transition-opacity leading-none"
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
+            <CardHeader className="  ">
+              <CardTitle className="mb-3">Create new tag</CardTitle>
+            </CardHeader>
 
             {/* Content */}
-            <div className="px-6 py-6">
-              {error && (
-                <div className="mb-4 border border-red-600 px-4 py-3 text-red-600 text-sm">
-                  {error}
-                </div>
-              )}
+            <CardContent className="">
+              {error && <div className="">{error}</div>}
 
-              <div>
-                <label className="block text-sm mb-2 opacity-60">TAG NAME</label>
-                <input
-                  type="text"
-                  value={newTagName}
-                  onChange={(e) => setNewTagName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleCreateTag()
-                    }
-                  }}
-                  className="w-full px-4 py-3 border border-black focus:outline-none"
-                  placeholder="Vintage, Y2K, etc."
-                  autoFocus
-                  disabled={isCreating}
-                />
-              </div>
-
-              <p className="text-xs opacity-60 mt-2">
-                Exempel: Vintage, Sommar, Y2K
-              </p>
-            </div>
+              <Input
+                type="text"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleCreateTag();
+                  }
+                }}
+                className=""
+                placeholder="Vintage, Y2K, etc."
+                autoFocus
+                disabled={isCreating}
+              />
+            </CardContent>
 
             {/* Actions */}
-            <div className="border-t border-black px-6 py-4 flex gap-3 justify-end">
-              <button
-                onClick={handleCloseModal}
-                disabled={isCreating}
-                className="px-6 py-2 border border-black hover:bg-gray-100 transition-colors disabled:opacity-50"
-              >
-                Avbryt
-              </button>
-              <button
+            <CardAction className=" flex flex-col w-full justify-end">
+              <Button
                 onClick={handleCreateTag}
                 disabled={isCreating || !newTagName.trim()}
-                className="px-6 py-2 bg-black text-white hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+                className=""
               >
-                {isCreating ? 'Skapar...' : 'Skapa'}
-              </button>
-            </div>
-          </div>
+                {isCreating ? "Skapar..." : "Skapa"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleCloseModal}
+                disabled={isCreating}
+                className=""
+              >
+                Avbryt
+              </Button>
+            </CardAction>
+          </Card>
         </div>
       )}
     </>
-  )
+  );
 }

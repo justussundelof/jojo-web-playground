@@ -1,58 +1,62 @@
-import { createClient } from '@/utils/supabase/server'
-import { cookies } from 'next/headers'
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { optimizeCloudinaryImage } from '@/utils/cloudinary'
+import { createClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
+import Link from "next/link";
+import ImageGallery from "@/components/ImageGallery";
+import { notFound } from "next/navigation";
+import { optimizeCloudinaryImage } from "@/utils/cloudinary";
 
 export default async function ProductPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = await params
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const { id } = await params;
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
 
   // Fetch single product
   const { data: product } = await supabase
-    .from('article')
-    .select(`
+    .from("article")
+    .select(
+      `
       *,
       category:categories!fk_article_category(id, name, slug),
       tag:tags!fk_article_tag(id, name, slug),
       size:sizes!fk_article_size(id, name, slug)
-    `)
-    .eq('id', id)
-    .single()
+    `
+    )
+    .eq("id", id)
+    .single();
 
   if (!product) {
-    notFound()
+    notFound();
   }
 
   // Fetch all images for this product
   const { data: images } = await supabase
-    .from('product_images')
-    .select('*')
-    .eq('article_id', id)
-    .order('display_order')
+    .from("product_images")
+    .select("*")
+    .eq("article_id", id)
+    .order("display_order");
 
-  const productImages = images && images.length > 0
-    ? images.map((img) =>
-        optimizeCloudinaryImage(img.image_url, {
-          width: 1200,
-          quality: 'auto',
-          crop: 'fit',
-        })
-      )
-    : product.img_url
-    ? [
-        optimizeCloudinaryImage(product.img_url, {
-          width: 1200,
-          quality: 'auto',
-          crop: 'fit',
-        }),
-      ]
-    : []
+  const productImages =
+    images && images.length > 0
+      ? images.map((img) =>
+          optimizeCloudinaryImage(img.image_url, {
+            width: 1200,
+            quality: "auto",
+            crop: "fit",
+          })
+        )
+      : product.img_url
+      ? [
+          optimizeCloudinaryImage(product.img_url, {
+            width: 1200,
+            quality: "auto",
+            crop: "fit",
+          }),
+        ]
+      : [];
 
   return (
     <div className="min-h-screen">
@@ -69,16 +73,7 @@ export default async function ProductPage({
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Images */}
-          <div className="space-y-4">
-            {productImages.map((imageUrl, index) => (
-              <div key={index} className="aspect-[3/4] border border-black">
-                <img
-                  src={imageUrl}
-                  alt={product.title || 'Product'}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
+          <div>
             {productImages.length === 0 && (
               <div className="aspect-[3/4] border border-black bg-gray-100 flex items-center justify-center">
                 <span className="text-gray-400">No image</span>
@@ -86,6 +81,10 @@ export default async function ProductPage({
             )}
           </div>
 
+          <ImageGallery
+            images={productImages}
+            alt={product.title || "Product"}
+          />
           {/* Product Info */}
           <div>
             <h1 className="text-3xl mb-4">{product.title}</h1>
@@ -121,28 +120,33 @@ export default async function ProductPage({
               )}
               <div className="flex gap-2">
                 <span className="opacity-60">Status:</span>
-                <span>{product.in_stock ? 'In Stock' : 'Sold Out'}</span>
+                <span>{product.in_stock ? "In Stock" : "Sold Out"}</span>
               </div>
               <div className="flex gap-2">
                 <span className="opacity-60">Type:</span>
-                <span>{product.for_sale ? 'For Sale' : 'For Rent'}</span>
+                <span>{product.for_sale ? "For Sale" : "For Rent"}</span>
               </div>
             </div>
 
             {/* Measurements */}
-            {product.measurements && Object.keys(product.measurements).length > 0 && (
-              <div className="border-t border-black pt-6 mb-8">
-                <h3 className="text-sm font-medium mb-3">MEASUREMENTS (CM)</h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  {Object.entries(product.measurements).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
-                      <span className="opacity-60 capitalize">{key}:</span>
-                      <span>{String(value)}</span>
-                    </div>
-                  ))}
+            {product.measurements &&
+              Object.keys(product.measurements).length > 0 && (
+                <div className="border-t border-black pt-6 mb-8">
+                  <h3 className="text-sm font-medium mb-3">
+                    MEASUREMENTS (CM)
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {Object.entries(product.measurements).map(
+                      ([key, value]) => (
+                        <div key={key} className="flex justify-between">
+                          <span className="opacity-60 capitalize">{key}:</span>
+                          <span>{value}</span>
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <Link
               href="/"
@@ -154,5 +158,5 @@ export default async function ProductPage({
         </div>
       </div>
     </div>
-  )
+  );
 }

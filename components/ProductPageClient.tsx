@@ -1,20 +1,22 @@
-'use client'
+"use client";
 
-import { useProducts } from '@/context/ProductContext'
-import ProductGrid from './ProductGrid'
+import { useProducts } from "@/context/ProductContext";
+import ProductGrid from "./AdminProductGrid";
 
 export default function ProductPageClient() {
-  const { products, loading, error } = useProducts()
+  const { products, loading, error } = useProducts();
 
   // Loading State
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-sm opacity-60 tracking-wide">LOADING PRODUCTS...</div>
+          <div className="text-sm opacity-60 tracking-wide">
+            LOADING PRODUCTS...
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Error State
@@ -26,7 +28,7 @@ export default function ProductPageClient() {
           <div className="text-xs opacity-40">{error}</div>
         </div>
       </div>
-    )
+    );
   }
 
   // Empty State
@@ -34,10 +36,12 @@ export default function ProductPageClient() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-sm opacity-60 tracking-wide">NO PRODUCTS AVAILABLE</div>
+          <div className="text-sm opacity-60 tracking-wide">
+            NO PRODUCTS AVAILABLE
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Success State - Display Products
@@ -45,7 +49,7 @@ export default function ProductPageClient() {
     <main className="min-h-screen">
       {/* Header */}
       <header className="border-b border-black">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className=" px-6 py-4">
           <h1 className="text-2xl tracking-tight">JOJO VINTAGE</h1>
         </div>
       </header>
@@ -55,5 +59,5 @@ export default function ProductPageClient() {
         <ProductGrid products={products} />
       </div>
     </main>
-  )
+  );
 }

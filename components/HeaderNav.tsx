@@ -1,199 +1,131 @@
 "use client";
 
-import { Cross1Icon, HamburgerMenuIcon } from "@radix-ui/react-icons";
 import { Button } from "./ui/button";
 import { useSite } from "@/app/context/SiteContext";
-import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { useState, useEffect } from "react";
+
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import ThemeSwitch from "./ThemeSwitch";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import Login from "./Login";
+import MenuOverlay from "./MenuOverlay";
+import { usePathname } from "next/navigation";
 
-function MenuOverlay({
-  setOpen,
-}: {
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
-  const { currentSite } = useSite();
-  const [gender, setGender] = useState<"man" | "woman">("woman");
+const headerVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1,
+    },
+  },
+};
 
-  const categories = ["Clothing", "Accessories", "Shoes", "Bags"];
-
-  return (
-    <div
-      className={`fixed top-0 left-0 z-50 h-full w-full ${
-        currentSite === "sale" ? "bg-pink-600" : "bg-blue-600"
-      } `}
-    >
-      <Button
-        onClick={() => setOpen(false)}
-        variant="ghost"
-        size="sm"
-        className="font-mono absolute top-0 right-0"
-      >
-        <Cross1Icon />
-      </Button>
-
-      <div className="h-[50vh] pt-24 px-6">
-        <div className="grid w-full max-w-sm items-center gap-1.5 font-mono font-normal text-xs rounded-none mb-6">
-          <Input
-            className=" border-black placeholder:text-black placeholder:text-xs font-mono text-xs rounded-none shadow-none "
-            id="text"
-            type="text"
-            placeholder="Search..."
-          />
-        </div>
-      </div>
-      <div className="h-[50vh] bg-pink-600 pt-12 px-6">
-        <div className="mb-4">
-          <Button variant="link" size="sm" className="font-mono text-xs">
-            Latest Added
-          </Button>
-        </div>
-
-        {/* Gender Selector */}
-        <div className="flex gap-2 mb-4 items-center">
-          <Button
-            variant="link"
-            size="sm"
-            className="font-mono text-xs"
-            onClick={() => setGender("man")}
-          >
-            Man
-          </Button>
-          <span className=" font-mono text-xs">/</span>
-          <Button
-            variant="link"
-            size="sm"
-            className="font-mono text-xs"
-            onClick={() => setGender("woman")}
-          >
-            Woman
-          </Button>
-        </div>
-
-        {/* Categories */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 ">
-          {categories.map((category, index) => (
-            <div key={index} className="col-span-1  ">
-              <Button variant="link" size="sm" className="font-mono text-xs ">
-                {gender === "man" ? "Men's" : "Women's"} {category}
-              </Button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+const headerItemVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    x: -12,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.35,
+      ease: [0.22, 1, 0.36, 1], // editorial ease
+    },
+  },
+};
 
 export default function HeaderNav() {
   const { currentSite, toggleSite } = useSite();
-  const { itemCount } = useCart();
-  const { user, signOut } = useAuth();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [openLogin, setOpenLogin] = useState(false);
+  const [admin, setAdmin] = useState(false);
 
-  const handleLogout = async () => {
-    await signOut();
-    router.push('/');
-  };
+  const ifAdmin = usePathname().startsWith("/admin");
+
+  useEffect(() => {
+    setAdmin(ifAdmin);
+  }, [ifAdmin]);
 
   return (
     <>
       {/* TOP PART OF HEADER */}
       <header
-        className={`bg-white fixed z-30 top-0 left-0 grid grid-cols-2 lg:grid-cols-6`}
+        className={` ${
+          admin ? "left-0 lg:left-14 bg-secondary" : "left-0 bg-background"
+        } fixed z-40 top-0  right-0 w-full h-8`}
       >
-        <div className="flex  w-full    ">
+        <span className="flex justify-between items-center w-full ">
           <Link href="/">
-            <Button variant="ghost" size="sm" className="font-mono text-xs">
+            <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center  px-3 leading-tight    ">
               JOJO STUDIO
-            </Button>
+            </h1>
           </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="font-mono font-normal text-xs"
-            onClick={toggleSite}
+
+          <motion.div
+            variants={headerVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex justify-end 
+           "
           >
-            <span className={`text-foreground`}>
-              {currentSite === "sale" ? "FOR RENT" : "FOR SALE"}
-            </span>{" "}
-            /{" "}
-            <span className="text-foreground/60 line-through">
-              {" "}
-              {currentSite === "sale" ? "SALE" : "RENT"}
+            <motion.div variants={headerItemVariants}>
+              <Button
+                variant="link"
+                size="sm"
+                className=""
+                onClick={toggleSite}
+              >
+                <span className={` `}>
+                  {currentSite === "sale" ? "For Rent" : "For Sale"}
+                </span>{" "}
+                /{" "}
+                <span className=" transition-colors line-through opacity-30">
+                  {" "}
+                  {currentSite === "sale" ? "Sale" : "Rent"}
+                </span>
+              </Button>
+            </motion.div>
+            <span className="hidden lg:block">
+              <motion.div variants={headerItemVariants}>
+                <ThemeSwitch />
+              </motion.div>
             </span>
-          </Button>
-        </div>
 
-        {/* OPEN/CLOSED SIGN */}
-
-        {/* <div className="col-span-1 flex flex-col justify-baseline items-end font-mono w-full">
-          <Badge className="flex items-center space-x-1.5">
-            open
-            <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-            <span className="line-through opacity-30">closed</span>
-          </Badge>
-          <span className="ml-3 hidden lg:flex">mon—sat 10—16</span>
-        </div> */}
-      </header>
-
-      {/* 🍀 STICKY → FIXED NAVBAR */}
-      <div
-        className={`bg-white fixed z-40 top-0  right-0 flex justify-between   rounded-none items-center`}
-      >
-        <span className="flex justify-end ">
-          {user ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="font-mono text-xs"
-              onClick={handleLogout}
-            >
-              Log Out
-            </Button>
-          ) : (
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="font-mono text-xs ">
+            <motion.div variants={headerItemVariants}>
+              <Button
+                onClick={() => setOpenLogin(!openLogin)}
+                variant="link"
+                size="sm"
+              >
                 Log In
               </Button>
-            </Link>
-          )}
+            </motion.div>
+            <motion.div variants={headerItemVariants}>
+              <Button variant="link" size="sm" className="">
+                Cart
+              </Button>
+            </motion.div>
 
-          <Link href="/checkout">
-            <Button variant="ghost" size="sm" className="font-mono text-xs relative">
-              Cart
-              {itemCount > 0 && (
-                <span className="ml-1 text-[10px] bg-black text-white rounded-full w-4 h-4 flex items-center justify-center">
-                  {itemCount}
-                </span>
-              )}
-            </Button>
-          </Link>
-
-          <Button
-            onClick={() => setOpen(!open)}
-            variant="ghost"
-            className=" "
-            size="sm"
-          >
-            <HamburgerMenuIcon />
-          </Button>
+            <motion.div variants={headerItemVariants}>
+              <Button onClick={() => setOpen(!open)} variant="link" size="sm">
+                Menu
+              </Button>
+            </motion.div>
+          </motion.div>
         </span>
-      </div>
+      </header>
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 bg-white h-3"></div>
+      <AnimatePresence>
+        {open && <MenuOverlay open={open} setOpen={setOpen} />}
+      </AnimatePresence>
 
-      {open && <MenuOverlay setOpen={setOpen} />}
-
-      {/* <div className="z-40 fixed bottom-0 left-0 right-0  flex items-baseline justify-between font-serif-densed  w-full text-sm py-1.5 px-3 text-black ">
-        J<div className="w-2.5 aspect-square rounded-full bg-black" />J
-        <span className="font-serif-wide">O</span>
-      </div> */}
+      <AnimatePresence>
+        {openLogin && (
+          <Login openLogin={openLogin} setOpenLogin={setOpenLogin} />
+        )}
+      </AnimatePresence>
     </>
   );
 }
