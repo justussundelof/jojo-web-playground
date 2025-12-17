@@ -22,6 +22,8 @@ export default function Login({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,8 @@ export default function Login({
     setEmail("");
     setPassword("");
     setConfirmPassword("");
+    setFirstName("");
+    setLastName("");
     setError(null);
     setSuccess(null);
   };
@@ -143,6 +147,8 @@ export default function Login({
           .insert({
             id: data.user.id,
             email: data.user.email,
+            first_name: firstName,
+            last_name: lastName,
             role: 'user'
           });
 
@@ -261,6 +267,28 @@ export default function Login({
             {success}
           </div>
         )}
+
+        <div>
+          <Input
+            type="text"
+            placeholder="First Name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            className="max-w-sm"
+          />
+        </div>
+
+        <div>
+          <Input
+            type="text"
+            placeholder="Last Name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+            className="max-w-sm"
+          />
+        </div>
 
         <div>
           <Input
