@@ -39,11 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const fetchProfile = async (userId: string, userEmail?: string) => {
         try {
+            console.log('Fetching profile for user:', userId)
+
             let { data, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
                 .single()
+
+            console.log('Profile fetch result:', { data, error, errorCode: error?.code, errorMessage: error?.message })
 
             // If profile doesn't exist, create it
             if (error && error.code === 'PGRST116') {
@@ -69,10 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     .eq('id', userId)
                     .single()
 
+                console.log('Profile after creation:', result)
                 data = result.data
             } else if (error) {
-                console.error('Error fetching profile:', error)
-                return null
+                console.error('Error fetching profile - Code:', error?.code, 'Message:', error?.message, 'Details:', error?.details, 'Hint:', error?.hint)
+                // Don't return null immediately, let the app continue
+                // The user might still be able to use the app
             }
 
             return data as Profile
