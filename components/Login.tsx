@@ -56,7 +56,7 @@ export default function Login({
       setLoading(false);
     } else {
       // Fetch user profile to get role
-      const { data: profile, error: profileError } = await supabase
+      let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
@@ -64,18 +64,31 @@ export default function Login({
 
       // If profile doesn't exist, create one with default 'user' role
       if (profileError && profileError.code === 'PGRST116') {
-        await supabase
+        const { error: insertError } = await supabase
           .from('profiles')
           .insert({
             id: data.user.id,
             email: data.user.email,
             role: 'user'
           });
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+        }
+
+        // Fetch the profile again after creating it
+        const result = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        profile = result.data;
       }
 
       setOpenLogin(false);
 
-      // Redirect based on role
+      // Redirect based on role (default to home if no profile)
       if (profile?.role === 'admin') {
         router.push("/admin");
       } else {
