@@ -1,6 +1,20 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@layer utilities {
+  .jojo-main-wrapper {
+    @apply p-1;
+  }
+
+  .jojo-main-wrapper-top {
+    @apply pt-[10vh] lg:pt-[20vh] px-1 pb-1;
+  }
+
+  .jojo-container-padding {
+    @apply px-3 py-9;
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

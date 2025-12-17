@@ -3,6 +3,8 @@ import "./globals.css";
 import localFont from "next/font/local";
 import { SiteProvider } from "../context/SiteContext";
 import HeaderNav from "@/components/HeaderNav";
+import { ContentProvider } from "@/context/ContentContext";
+import { getContent } from "@/lib/getContent";
 
 import { ThemeProvider } from "next-themes";
 import React from "react";
@@ -97,17 +99,18 @@ export const metadata: Metadata = {
   description: "studio of vintage couture",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   modal,
 }: Readonly<{
   children: React.ReactNode;
   modal?: React.ReactNode;
 }>) {
+  const { pages, posts } = await getContent();
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${gtCompressed.variable} ${gtSans.variable} ${gtMono.variable} ${CLTSerifDensed.variable} ${CLTSerifRegular.variable} ${CLTSerifWide.variable} ${gtSectraDisplay.variable} ${gtSectraDisplayItalic.variable} ${gtSectraBook.variable} antialiased`}
+        className={`${gtCompressed.variable} ${gtSans.variable} ${gtMono.variable} ${CLTSerifDensed.variable} ${CLTSerifRegular.variable} ${CLTSerifWide.variable} ${gtSectraDisplay.variable} ${gtSectraDisplayItalic.variable} ${gtSectraBook.variable} antialiased bg-background`}
       >
         <AuthProvider>
           <CartProvider>
@@ -119,10 +122,12 @@ export default function RootLayout({
                 disableTransitionOnChange
               >
                 <SiteProvider>
-                  <HeaderNav />
+                  <ContentProvider pages={pages} posts={posts}>
+                    <HeaderNav />
 
-                  {children}
-                  {modal}
+                    {children}
+                    {modal}
+                  </ContentProvider>
                 </SiteProvider>
               </ThemeProvider>
             </ProductProvider>

@@ -42,21 +42,21 @@ export default async function ProductPage({
   const productImages =
     images && images.length > 0
       ? images.map((img) =>
-          optimizeCloudinaryImage(img.image_url, {
-            width: 1200,
-            quality: "auto",
-            crop: "fit",
-          })
-        )
+        optimizeCloudinaryImage(img.image_url, {
+          width: 1200,
+          quality: "auto",
+          crop: "fit",
+        })
+      )
       : product.img_url
-      ? [
+        ? [
           optimizeCloudinaryImage(product.img_url, {
             width: 1200,
             quality: "auto",
             crop: "fit",
           }),
         ]
-      : [];
+        : [];
 
   return (
     <div className="min-h-screen">
@@ -140,8 +140,7 @@ export default async function ProductPage({
                       ([key, value]) => (
                         <div key={key} className="flex justify-between">
                           <span className="opacity-60 capitalize">{key}:</span>
-                          <span>{String(value)}</span>
-                        </div>
+                          <span>{String(value)}</span>                        </div>
                       )
                     )}
                   </div>

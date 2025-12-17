@@ -54,11 +54,11 @@ export default function HeaderNav() {
       <header
         className={` ${
           admin ? "left-0 lg:left-14 bg-secondary" : "left-0 bg-background"
-        } fixed z-40 top-0  right-0 w-full h-8`}
+        } fixed z-40 top-0  right-0 w-full px-3 pt-1 bg-background`}
       >
-        <span className="flex justify-between items-center w-full ">
+        <span className="flex justify-between items-baseline w-full ">
           <Link href="/">
-            <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center  px-3 leading-tight    ">
+            <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center  leading-tight    ">
               JOJO STUDIO
             </h1>
           </Link>
