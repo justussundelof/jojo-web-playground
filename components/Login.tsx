@@ -71,12 +71,6 @@ export default function Login({
 
       console.log('Login - Profile fetch:', { profile, profileError });
 
-      // CRITICAL: Close modal and stop loading IMMEDIATELY to prevent hang
-      // Do this BEFORE any async operations or navigation
-      setOpenLogin(false);
-      setLoading(false);
-      console.log('Login - Modal closed and loading stopped immediately');
-
       // If profile doesn't exist, create one with default 'user' role
       if (profileError && profileError.code === 'PGRST116') {
         console.log('Login - Creating profile...');
@@ -91,16 +85,17 @@ export default function Login({
         console.error('Login - Error fetching profile:', profileError);
       }
 
+      // Close modal and stop loading
+      setOpenLogin(false);
+      setLoading(false);
+
       // Redirect based on role (default to home if no profile)
-      // Use setTimeout to ensure modal closes first
-      setTimeout(() => {
-        if (profile?.role === 'admin') {
-          router.push("/admin");
-        } else {
-          router.push("/");
-        }
-        router.refresh();
-      }, 100);
+      if (profile?.role === 'admin') {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
+      router.refresh();
     } catch (err) {
       console.error('Unexpected error in handleLogin:', err);
       setError('An unexpected error occurred. Please try again.');
