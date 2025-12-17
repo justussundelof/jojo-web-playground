@@ -58,6 +58,7 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
   const toggleForm = () => setOpenForm(!openForm);
 
   const [layoutIndex, setLayoutIndex] = useState<number>(1);
+  const [showText, setShowText] = useState(false);
 
   const layouts = [
     "grid-cols-4 lg:grid-cols-8 grid-rows-auto",
@@ -123,7 +124,7 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
                 href={`/admin/product/${product.id}`}
                 className="group cursor-pointer"
               >
-                <ProductCard product={product} />
+                <ProductCard product={product} showText={showText} setShowText={setShowText} />
               </Link>
             </motion.div>
           );
