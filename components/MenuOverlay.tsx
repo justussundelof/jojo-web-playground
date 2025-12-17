@@ -75,11 +75,11 @@ export default function MenuOverlay({
       exit="exit"
     >
       <motion.div
-        className="flex justify-between w-full items-center "
+        className="flex justify-between w-full items-center px-3 pt-1 "
         variants={sectionVariants}
       >
         <Link href="/">
-          <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center  px-3 leading-tight w-1/2    ">
+          <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center   leading-tight w-full    ">
             JOJO STUDIO
           </h1>
         </Link>
@@ -98,15 +98,15 @@ export default function MenuOverlay({
             size="sm"
             className=""
           >
-            Close [x]
+            Close
           </Button>
         </div>
       </motion.div>
 
       {/* HEADER CONTENT */}
-      <div className=" mt-[10vh] lg:mt-[20vh] h-full w-full flex flex-col lg:flex-row bg-accent">
+      <div className=" jojo-main-wrapper-top h-full w-full flex flex-col lg:flex-row bg-accent">
         <motion.div
-          className="h-auto w-full  lg:w-1/2 py-9  px-3   flex flex-col  space-y-6"
+          className="h-auto w-full  lg:w-1/2   flex flex-col  jojo-container-padding space-y-6"
           variants={sectionVariants}
         >
           <div className="grid w-full  items-center   text-xs  px-3">
@@ -126,8 +126,8 @@ export default function MenuOverlay({
                 { label: "Products", href: "/" },
                 { label: "Visit The Store", href: "/" },
                 { label: "About JOJO", href: "/pages/about" },
-                { label: "Privacy Policy", href: "/" },
-                { label: "Imprint", href: "/" },
+                { label: "Privacy Policy", href: "/pages/privacy-policy" },
+                { label: "Imprint", href: "/pages/imprint" },
                 { label: "Admin", href: "/admin" },
               ].map((item) => (
                 <motion.li key={item.label} variants={itemVariants}>
@@ -142,7 +142,7 @@ export default function MenuOverlay({
           </nav>
         </motion.div>
         <motion.div
-          className=" w-full h-full lg:h-screen lg:w-1/2 bg-accent text-accent-foreground flex flex-col px-3 py-9 space-y-6"
+          className=" w-full h-full lg:h-screen lg:w-1/2 bg-accent text-accent-foreground flex flex-col jojo-container-padding space-y-6"
           variants={sectionVariants}
         >
           <div className="">
@@ -153,11 +153,11 @@ export default function MenuOverlay({
 
           {/* Categories */}
           <motion.div
-            className="grid grid-cols-2 lg:grid-cols-4 gap-0"
+            className="grid grid-cols-2 lg:grid-cols-4  gap-0"
             variants={listVariants}
           >
             {categories.map((category) => (
-              <motion.div key={category} variants={itemVariants}>
+              <motion.div className="" key={category} variants={itemVariants}>
                 <Button variant="link" size="sm">
                   {category}
                 </Button>

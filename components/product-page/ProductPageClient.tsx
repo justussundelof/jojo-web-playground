@@ -2,7 +2,7 @@
 
 import { useSite } from "@/context/SiteContext";
 import ProductsGrid from "./ProductsGrid";
-import SiteSelector from "../SiteSelector";
+import SiteSelector from "./SiteSelector";
 import { useState, useEffect } from "react";
 import LoaderGIF from "../LoaderGIF";
 
@@ -24,12 +24,8 @@ export default function ProductPageClient({}: {}) {
   }, [currentSite]);
 
   return (
-    <div className={`min-h-screen bg-background overflow-hidden  `}>
-      <section
-        className={`${
-          currentSite === "neutral" ? "px-0 block   h-screen" : "hidden "
-        }  `}
-      >
+    <div className="bg-background">
+      <section>
         <SiteSelector />
       </section>
 

@@ -63,21 +63,14 @@ export default function HeaderNav() {
       <header
         className={` ${
           admin ? "left-0 lg:left-14 bg-secondary" : "left-0 bg-background"
-        } fixed z-40 top-0  right-0 w-full h-8`}
+        } fixed z-40 top-0  right-0 w-full px-3 pt-1 bg-background`}
       >
-        <span className="flex justify-between items-center w-full ">
-          <div className="flex items-center gap-3 px-3">
-            <Link href="/">
-              <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center leading-tight">
-                JOJO STUDIO
-              </h1>
-            </Link>
-            {user && profile?.first_name && (
-              <span className="text-xs font-serif-book opacity-60">
-                Hi, {profile.first_name}
-              </span>
-            )}
-          </div>
+        <span className="flex justify-between items-baseline w-full ">
+          <Link href="/">
+            <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center  leading-tight    ">
+              JOJO STUDIO
+            </h1>
+          </Link>
 
           <motion.div
             variants={headerVariants}

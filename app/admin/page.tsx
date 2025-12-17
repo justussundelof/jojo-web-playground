@@ -27,6 +27,7 @@ export default async function AdminDashboard() {
     redirect("/");
   }
 
+
   // Fetch products with joined category, tag, and size data
   const { data: products } = await supabase
     .from("article")
