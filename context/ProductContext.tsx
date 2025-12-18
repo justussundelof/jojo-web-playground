@@ -63,7 +63,7 @@ export function ProductProvider({ children }: { children: ReactNode }) {
             .select("image_url")
             .eq("article_id", product.id)
             .eq("is_primary", true)
-            .single();
+            .maybeSingle();
 
           return {
             ...product,
