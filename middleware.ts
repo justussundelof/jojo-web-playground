@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
 
     // Define protected route patterns
-    const protectedRoutes = ["/checkout", "/profile"];
+    const protectedRoutes = ["/checkout", "/profile", "/account"];
     const adminRoutes = ["/admin"];
 
     // Check if path matches admin routes

@@ -3,9 +3,11 @@
 import { motion, type Variants } from "framer-motion";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import ThemeSwitch from "./ThemeSwitch";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const overlayVariants: Variants = {
   hidden: { opacity: 0, x: -100 },
@@ -57,7 +59,36 @@ export default function MenuOverlay({
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  const router = useRouter();
+  const { user, isAdmin, signOut, loading } = useAuth();
   const categories = ["Clothing", "Accessories", "Shoes", "Bags"];
+
+  const handleSignOut = async () => {
+    await signOut();
+    setOpen(false);
+    router.refresh();
+  };
+
+  // Build menu items dynamically based on auth state
+  const menuItems = useMemo(() => {
+    const baseItems = [
+      { label: "Products", href: "/" },
+      { label: "Visit The Store", href: "/" },
+      { label: "About JOJO", href: "/pages/about" },
+      { label: "Privacy Policy", href: "/pages/privacy-policy" },
+      { label: "Imprint", href: "/pages/imprint" },
+    ];
+
+    // Add role-based item if user is logged in
+    if (user) {
+      baseItems.push({
+        label: isAdmin ? "Admin" : "Account",
+        href: isAdmin ? "/admin" : "/account",
+      });
+    }
+
+    return baseItems;
+  }, [user, isAdmin]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -86,9 +117,16 @@ export default function MenuOverlay({
 
         <div className="flex justify-end items-center w-1/2  ">
           <ThemeSwitch />
-          <Button variant="link" size="sm" className=" ">
-            Log In
-          </Button>
+          {!loading && (
+            <Button
+              variant="link"
+              size="sm"
+              className=" "
+              onClick={user ? handleSignOut : () => setOpen(false)}
+            >
+              {user ? "Sign Out" : "Sign In"}
+            </Button>
+          )}
           <Button variant="link" size="sm" className=" ">
             Cart
           </Button>
@@ -122,14 +160,7 @@ export default function MenuOverlay({
               className="flex flex-col  text-sm font-mono"
               variants={listVariants}
             >
-              {[
-                { label: "Products", href: "/" },
-                { label: "Visit The Store", href: "/" },
-                { label: "About JOJO", href: "/pages/about" },
-                { label: "Privacy Policy", href: "/pages/privacy-policy" },
-                { label: "Imprint", href: "/pages/imprint" },
-                { label: "Admin", href: "/admin" },
-              ].map((item) => (
+              {menuItems.map((item) => (
                 <motion.li key={item.label} variants={itemVariants}>
                   <Link href={item.href} onClick={() => setOpen(false)}>
                     <Button variant="link" size="sm">

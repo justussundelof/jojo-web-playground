@@ -24,6 +24,8 @@ export default function Login({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,8 @@ export default function Login({
     setEmail("");
     setPassword("");
     setConfirmPassword("");
+    setFirstName("");
+    setLastName("");
     setError(null);
     setSuccess(null);
   };
@@ -96,6 +100,12 @@ export default function Login({
     setError(null);
     setSuccess(null);
 
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("First name and last name are required");
+      setLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -108,7 +118,7 @@ export default function Login({
       return;
     }
 
-    const result = await signUp(email, password);
+    const result = await signUp(email, password, firstName.trim(), lastName.trim());
 
     if (!result.success) {
       setError(result.error || "An error occurred");
@@ -216,6 +226,28 @@ export default function Login({
             {success}
           </div>
         )}
+
+        <div>
+          <Input
+            type="text"
+            placeholder="First Name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            className="max-w-sm"
+          />
+        </div>
+
+        <div>
+          <Input
+            type="text"
+            placeholder="Last Name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+            className="max-w-sm"
+          />
+        </div>
 
         <div>
           <Input
