@@ -158,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [supabase.auth, fetchProfile])
 
     // Sign up
-    const signUp = async (email: string, password: string): Promise<AuthResult> => {
+    const signUp = async (email: string, password: string, firstName: string, lastName: string): Promise<AuthResult> => {
         try {
             clearError()
 
@@ -173,7 +173,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const { data, error: signUpError } = await supabase.auth.signUp({
                 email,
-                password
+                password,
+                options: {
+                    data: {
+                        first_name: firstName,
+                        last_name: lastName,
+                    }
+                }
             })
 
             if (signUpError) {

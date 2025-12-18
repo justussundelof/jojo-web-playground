@@ -5,6 +5,8 @@ export type UserRole = 'user' | 'admin'
 export interface Profile {
   id: string
   email: string
+  first_name: string | null
+  last_name: string | null
   role: UserRole
   created_at: string
   updated_at: string
@@ -35,7 +37,7 @@ export interface AuthContextType {
   error: AuthError | null
 
   // Actions
-  signUp: (email: string, password: string) => Promise<AuthResult>
+  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<AuthResult>
   signIn: (email: string, password: string) => Promise<AuthResult>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<AuthResult>
