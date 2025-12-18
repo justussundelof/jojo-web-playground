@@ -5,6 +5,7 @@ import ProductsGrid from "./ProductsGrid";
 import SiteSelector from "./SiteSelector";
 import { useState, useEffect } from "react";
 import LoaderGIF from "../LoaderGIF";
+import CookieModal from "../CookieModal";
 
 export default function ProductPageClient({}: {}) {
   const { currentSite } = useSite();
@@ -34,6 +35,7 @@ export default function ProductPageClient({}: {}) {
       ) : (
         <ProductsGrid />
       )}
+      <CookieModal />
     </div>
   );
 }

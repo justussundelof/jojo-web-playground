@@ -1,4 +1,4 @@
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 

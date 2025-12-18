@@ -57,7 +57,7 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
   const [openForm, setOpenForm] = useState(false);
   const toggleForm = () => setOpenForm(!openForm);
 
-  const [layoutIndex, setLayoutIndex] = useState<number>(1);
+  const [layoutIndex, setLayoutIndex] = useState<number>(0);
   const [showText, setShowText] = useState(false);
 
   const layouts = [
@@ -67,7 +67,7 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
   ];
 
   return (
-    <div className="relative w-full bg-background">
+    <div className="relative w-full  pl-10 pt-1 pb-1 ">
       {openForm && <ProductForm toggleForm={toggleForm} mode="create" />}
 
       <motion.div
@@ -75,7 +75,7 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className={` grid  ${layouts[layoutIndex]} gap-x-1.5 gap-y-1.5 relative`}
+        className={` grid bg-popover  ${layouts[layoutIndex]} gap-x-1.5 gap-y-1.5 relative`}
       >
         {products.map((product, index) => {
           // Optimize image URL if available

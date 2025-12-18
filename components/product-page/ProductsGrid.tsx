@@ -134,9 +134,13 @@ export default function ProductsGrid({}: {}) {
 
   return (
     <LayoutGroup>
-      <div className="relative w-full overflow-visible jojo-main-wrapper-top">
+      <div
+        className={` ${
+          currentSite === "sale" ? "bg-background" : "bg-background"
+        } relative w-full overflow-visible jojo-main-wrapper-top`}
+      >
         {/* Sticky header outside the motion/grid */}
-        <div className="sticky top-8 z-30 bg-background shadow w-full py-1">
+        <div className="sticky top-8 z-30  shadow w-full py-1">
           <div className=" flex justify-between items-baseline font-mono text-xs gap-3 w-full ">
             <span className="flex items-baseline font-mono text-xs gap-1">
               <Badge variant="outline">FILTER</Badge>
@@ -157,7 +161,11 @@ export default function ProductsGrid({}: {}) {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className={` grid  ${layouts[layoutIndex]} gap-x-1.5 gap-y-1.5 relative  pb-1  `}
+          className={` grid  ${
+            layouts[layoutIndex]
+          } gap-x-1.5 gap-y-1.5 relative  pb-1 ${
+            currentSite === "sale" ? "bg-background" : "bg-foreground"
+          }  `}
         >
           {products.map((product) => (
             <Fragment key={product.id}>

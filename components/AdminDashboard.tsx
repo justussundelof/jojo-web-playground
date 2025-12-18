@@ -38,7 +38,7 @@ export default function AdminDashboard() {
   return (
     <>
       <LayoutGroup>
-        <div className="pt-19 lg:pt-10 pl-1 lg:pl-10 pr-1 pb-1 w-full flex-col bg- grid grid-cols-4 lg:grid-cols-12 ">
+        <div className="pl-1 lg:pl-10 pr-1 pb-1 w-full flex-col bg- grid grid-cols-4 lg:grid-cols-12 ">
           <div className="col-span-4 lg:col-span-10 grid grid-cols-4 lg:grid-cols-6 auto-rows-fr items-start justify-start gap-1 ">
             <span
               onClick={toggleForm}
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
               <motion.span
                 key={mainPage.slug}
                 layout
-                className="col-span-2 bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-all  flex items-center justify-center cursor-pointer font-serif-book text-sm aspect-3/4"
+                className="col-span-1lg:col-span-2 bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-all  flex items-center justify-center cursor-pointer font-serif-book text-sm aspect-3/4"
                 onClick={() => setEditing(mainPage.slug as any)}
               >
                 {mainPage.label}

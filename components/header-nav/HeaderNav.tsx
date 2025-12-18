@@ -1,16 +1,16 @@
 "use client";
 
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { useSite } from "@/context/SiteContext";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
 
 import Link from "next/link";
 import ThemeSwitch from "./ThemeSwitch";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import Login from "./Login";
+import Login from "../Login";
 import MenuOverlay from "./MenuOverlay";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import LogInButton from "./LogInButton";
 
 const headerVariants: Variants = {
   hidden: {},
@@ -39,8 +39,6 @@ const headerItemVariants: Variants = {
 
 export default function HeaderNav() {
   const { currentSite, toggleSite } = useSite();
-  const { user, profile, signOut } = useAuth();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [openLogin, setOpenLogin] = useState(false);
   const [admin, setAdmin] = useState(false);
@@ -51,32 +49,19 @@ export default function HeaderNav() {
     setAdmin(ifAdmin);
   }, [ifAdmin]);
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/");
-    router.refresh();
-  };
-
   return (
     <>
       {/* TOP PART OF HEADER */}
       <header
-        className={` ${admin ? " pl-3 lg:pl-12 bg-background" : "pl-3 bg-background"
-          } fixed z-40 top-0 left-0  right-0 w-full pr-3 pt-1 bg-background h-9`}
+        className={` ${admin ? " pl-3 lg:pl-12 bg-secondary" : "pl-3 bg-background"
+          } fixed z-40 top-0 left-0  right-0 w-full pr-3 pt-1  h-9`}
       >
         <span className="flex justify-between items-baseline w-full ">
-          <div className="flex items-center gap-3 px-3">
-            <Link href="/">
-              <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center leading-tight">
-                JOJO STUDIO
-              </h1>
-            </Link>
-            {user && profile?.first_name && (
-              <span className="text-xs font-serif-book opacity-60">
-                Hi, {profile.first_name}
-              </span>
-            )}
-          </div>
+          <Link href="/">
+            <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center  leading-tight    ">
+              JOJO STUDIO
+            </h1>
+          </Link>
 
           <motion.div
             variants={headerVariants}
@@ -109,11 +94,8 @@ export default function HeaderNav() {
             </span>
 
             <motion.div variants={headerItemVariants}>
-              <Button
-                onClick={user ? handleSignOut : () => setOpenLogin(!openLogin)} variant="link"
-                size="sm"
-              >
-                {user ? "Sign Out" : "Sign In"}              </Button>
+              {/* LOG IN BUTTON / NAMN */}
+              <LogInButton openLogin={openLogin} setOpenLogin={setOpenLogin} />
             </motion.div>
             <motion.div variants={headerItemVariants}>
               <Button variant="link" size="sm" className="">
