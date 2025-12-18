@@ -55,4 +55,3 @@ export function useRequireAuth(options?: UseRequireAuthOptions): UseRequireAuthR
     isLoading
   }
 }
-
