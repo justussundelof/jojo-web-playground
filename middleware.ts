@@ -39,11 +39,19 @@ export async function middleware(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser();
 
-    // Protect admin routes
-    if (request.nextUrl.pathname.startsWith("/admin")) {
+    const path = request.nextUrl.pathname;
+
+    // Define protected route patterns
+    const protectedRoutes = ["/checkout", "/profile"];
+    const adminRoutes = ["/admin"];
+
+    // Check if path matches admin routes
+    if (adminRoutes.some(route => path.startsWith(route))) {
         if (!user) {
-            // Redirect to home if not authenticated
-            return NextResponse.redirect(new URL("/", request.url));
+            // Store intended path and redirect to home (login modal will handle from there)
+            const redirectUrl = new URL("/", request.url);
+            redirectUrl.searchParams.set("redirectTo", path);
+            return NextResponse.redirect(redirectUrl);
         }
 
         // Check if user is admin
@@ -56,6 +64,16 @@ export async function middleware(request: NextRequest) {
         if (profile?.role !== "admin") {
             // Redirect to home if not admin
             return NextResponse.redirect(new URL("/", request.url));
+        }
+    }
+
+    // Check if path matches protected routes (any authenticated user)
+    if (protectedRoutes.some(route => path.startsWith(route))) {
+        if (!user) {
+            // Store intended path and redirect to home
+            const redirectUrl = new URL("/", request.url);
+            redirectUrl.searchParams.set("redirectTo", path);
+            return NextResponse.redirect(redirectUrl);
         }
     }
 
