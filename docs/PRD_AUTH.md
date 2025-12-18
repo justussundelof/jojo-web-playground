@@ -1,6 +1,6 @@
 # Product Requirements Document: Authentication System
 
-**Version:** 1.0
+**Version:** 2.0
 **Status:** Draft
 **Last Updated:** 2025-12-18
 
@@ -10,106 +10,139 @@
 
 ### 1.1 Purpose
 
-This PRD defines the requirements for a robust, bulletproof authentication system using Supabase Auth. The goal is to fix the existing buggy implementation and establish a reliable, maintainable auth architecture.
+This PRD defines the requirements for a robust authentication system using Supabase Auth, including user roles, profile management, and role-aware UI components.
 
-### 1.2 Current State Summary
-
-The existing auth system has a solid foundation but suffers from critical implementation gaps:
-
-| Component | Status | Issue |
-|-----------|--------|-------|
-| AuthContext | Broken | Missing `profile`, `role`, `isAdmin` - only exposes `user`, `session`, `loading` |
-| useRole Hook | Broken | References non-existent properties from AuthContext |
-| Login Redirect | Bug | Hardcoded redirect to `/admin` regardless of user role |
-| Middleware | Working | Properly protects `/admin/*` routes |
-| Database | Working | Profiles table with role enum, RLS policies correct |
-| Supabase Clients | Working | Browser/server clients properly configured |
-
-### 1.3 Goals
-
-1. **Fix Critical Bugs**: Resolve broken hooks and missing context data
-2. **Reliable State Management**: Single source of truth for auth state
-3. **Role-Based Access**: Consistent role checking across client and server
-4. **Graceful Error Handling**: No silent failures, proper error states
-5. **Session Resilience**: Handle token refresh, expiry, and edge cases
-
----
-
-## 2. User Roles
-
-### 2.1 Role Definitions
+### 1.2 User Roles
 
 | Role | Value | Description | Assignment |
 |------|-------|-------------|------------|
 | Regular User | `user` | Default role for all new signups | Automatic on registration |
 | Admin User | `admin` | Elevated privileges | Manual update in Supabase Dashboard |
 
-### 2.2 Role Storage
+---
 
-- Roles stored in `profiles.role` column (PostgreSQL enum: `user_role`)
-- Profile created automatically via database trigger on signup
-- Default role: `user`
-- Admin promotion: Manual update via Supabase Dashboard or direct SQL
+## 2. Current State Analysis
 
-### 2.3 Role Assignment Flow
+### 2.1 What's Working
+
+| Component | File | Status |
+|-----------|------|--------|
+| Supabase Clients | `utils/supabase/client.ts`, `server.ts` | Working |
+| Middleware Protection | `middleware.ts` | Working - protects `/admin/*` routes |
+| Database Schema | `006_add_user_profiles_and_roles.sql` | Working - profiles table with RLS |
+| Login UI | `components/Login.tsx` | Working - sign-in, sign-up, forgot password views |
+| Header Sign In/Out Button | `components/HeaderNav.tsx:113-116` | Working - toggles between "Sign In" and "Sign Out" |
+
+### 2.2 Critical Bugs
+
+#### Bug #1: AuthContext Missing Profile Data
+
+**File:** `context/AuthContext.tsx`
+
+**Current exports:**
+```typescript
+interface AuthContextType {
+  user: User | null
+  session: Session | null
+  loading: boolean
+  signUp, signIn, signOut, resetPassword
+}
+```
+
+**Problem:** Missing `profile`, `role`, `isAdmin`. The context never fetches profile data from the database.
+
+**Impact:**
+- `HeaderNav.tsx:42` tries to use `profile` - will be undefined
+- `HeaderNav.tsx:74-77` tries to access `profile?.first_name` - fails silently
+- `useRole.ts:7` tries to destructure `role, isAdmin` - will be undefined
+
+---
+
+#### Bug #2: useRole Hook Broken
+
+**File:** `hooks/useRole.ts`
+
+```typescript
+// Line 4: Imports non-existent type
+import type { UserRole } from '@/context/AuthContext'
+
+// Line 7: Destructures non-existent properties
+const { role, isAdmin, loading } = useAuth()
+```
+
+**Impact:** Hook will fail at runtime. Any component using `useRole()` will crash.
+
+---
+
+#### Bug #3: Login Redirect Hardcoded to /admin
+
+**File:** `components/Login.tsx:59`
+
+```typescript
+router.push("/admin")  // Always goes to admin, regardless of role
+```
+
+**Impact:** Regular users are redirected to `/admin`, then immediately kicked back to `/` by middleware. Bad UX.
+
+---
+
+#### Bug #4: MenuOverlay Not Auth-Aware
+
+**File:** `components/MenuOverlay.tsx`
+
+**Problems:**
+- Line 89-91: Shows "Log In" button but doesn't use auth state
+- Line 131: "Admin" link shown to all users, should be conditional
+- No "Account" option for regular users
+- Doesn't sync with HeaderNav login state
+
+---
+
+#### Bug #5: Profile Schema Missing Name Fields
+
+**File:** `supabase/migrations/006_add_user_profiles_and_roles.sql`
+
+**Current columns:**
+- `id`, `email`, `role`, `created_at`, `updated_at`
+
+**Missing:**
+- `first_name`
+- `last_name`
+
+---
+
+### 2.3 Current Auth Flow
 
 ```
-User Signs Up
-    ↓
-auth.users record created (Supabase)
-    ↓
-Trigger: on_auth_user_created fires
-    ↓
-Function: handle_new_user() executes
-    ↓
-profiles record created with role='user'
+1. User signs up → auth.users created → trigger creates profile (role='user')
+2. User signs in → AuthContext updates user/session (profile NOT fetched)
+3. Login.tsx redirects to /admin (BUG: should check role)
+4. Middleware checks profile.role → non-admins redirected to /
+5. HeaderNav shows "Sign Out" (working) but can't show first_name (profile null)
 ```
 
 ---
 
-## 3. Authentication Requirements
+## 3. Feature Requirements
 
-### 3.1 AuthContext Requirements
+### 3.1 Profile Fields Enhancement
 
-The AuthContext must provide a complete, reactive auth state:
+#### 3.1.1 Add Name Fields to Database
 
-#### 3.1.1 Required Exports
+Create new migration to add:
+- `first_name TEXT`
+- `last_name TEXT`
 
-```typescript
-interface AuthContextType {
-  // Core Auth State
-  user: User | null                    // Supabase User object
-  session: Session | null              // Supabase Session
-  profile: Profile | null              // Profile from profiles table
+Update trigger `handle_new_user()` to accept name parameters.
 
-  // Derived State
-  role: UserRole | null                // 'user' | 'admin' | null
-  isAdmin: boolean                     // Convenience: role === 'admin'
-  isAuthenticated: boolean             // Convenience: user !== null
-
-  // Loading States
-  loading: boolean                     // Initial auth check in progress
-  profileLoading: boolean              // Profile fetch in progress
-
-  // Error State
-  error: AuthError | null              // Last auth error
-
-  // Actions
-  signUp: (email: string, password: string) => Promise<AuthResult>
-  signIn: (email: string, password: string) => Promise<AuthResult>
-  signOut: () => Promise<void>
-  resetPassword: (email: string) => Promise<AuthResult>
-  refreshProfile: () => Promise<void>  // Force refresh profile data
-  clearError: () => void               // Clear error state
-}
-```
-
-#### 3.1.2 Profile Type
+#### 3.1.2 Profile Type Definition
 
 ```typescript
 interface Profile {
   id: string
   email: string
+  first_name: string | null
+  last_name: string | null
   role: UserRole
   created_at: string
   updated_at: string
@@ -118,619 +151,555 @@ interface Profile {
 type UserRole = 'user' | 'admin'
 ```
 
-#### 3.1.3 AuthResult Type
+---
+
+### 3.2 Sign Up Form Enhancement
+
+#### 3.2.1 Add Name Fields to Sign Up
+
+**File to modify:** `components/Login.tsx`
+
+Add to sign-up form:
+- First Name input (required)
+- Last Name input (required)
+
+#### 3.2.2 Pass Name to Supabase
 
 ```typescript
-interface AuthResult {
-  success: boolean
-  error?: string
-  data?: any
-}
+const { error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    data: {
+      first_name: firstName,
+      last_name: lastName,
+    }
+  }
+})
 ```
 
-### 3.2 State Synchronization Requirements
+#### 3.2.3 Update Database Trigger
 
-#### 3.2.1 Profile Fetch Timing
+Modify `handle_new_user()` to read from `raw_user_meta_data`:
 
-The AuthContext MUST fetch profile data:
-
-1. **On initial load**: After session is restored from storage
-2. **On sign in**: Immediately after successful authentication
-3. **On auth state change**: When `onAuthStateChange` fires with `SIGNED_IN`
-4. **On demand**: When `refreshProfile()` is called
-
-#### 3.2.2 Profile Fetch Logic
-
+```sql
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, first_name, last_name, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    NEW.raw_user_meta_data->>'first_name',
+    NEW.raw_user_meta_data->>'last_name',
+    'user'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
-Session exists?
-    ├─ No  → Set profile = null, role = null, isAdmin = false
-    └─ Yes → Fetch profile from profiles table
-              ├─ Success → Update profile, role, isAdmin
-              └─ Error → Set error state, keep profile null
-```
-
-#### 3.2.3 State Reset on Sign Out
-
-On sign out, ALL state must reset:
-- `user` → `null`
-- `session` → `null`
-- `profile` → `null`
-- `role` → `null`
-- `isAdmin` → `false`
-- `isAuthenticated` → `false`
-- `error` → `null`
-
-### 3.3 Session Management Requirements
-
-#### 3.3.1 Session Persistence
-
-- Use Supabase's built-in session persistence (localStorage)
-- Session auto-refreshes via `onAuthStateChange` listener
-
-#### 3.3.2 Auth State Change Handling
-
-The context must handle these events:
-
-| Event | Action |
-|-------|--------|
-| `INITIAL_SESSION` | Restore session, fetch profile if session exists |
-| `SIGNED_IN` | Update user/session, fetch profile |
-| `SIGNED_OUT` | Reset all state to defaults |
-| `TOKEN_REFRESHED` | Update session (user/profile unchanged) |
-| `USER_UPDATED` | Update user object |
-
-#### 3.3.3 Loading State Management
-
-```
-Component Mount
-    ↓
-loading = true
-    ↓
-Check for existing session
-    ↓
-Session found? → profileLoading = true → Fetch profile
-    ↓
-loading = false, profileLoading = false
-```
-
-**Critical**: Components must not render protected content while `loading` is `true`.
 
 ---
 
-## 4. Hook Requirements
+### 3.3 AuthContext Requirements
 
-### 4.1 useAuth Hook
-
-Primary hook for accessing auth context:
+#### 3.3.1 Required Exports
 
 ```typescript
-function useAuth(): AuthContextType
-```
+interface AuthContextType {
+  // Core State
+  user: User | null
+  session: Session | null
+  profile: Profile | null
 
-Usage:
-```typescript
-const { user, profile, role, isAdmin, loading, signIn, signOut } = useAuth()
-```
-
-### 4.2 useRole Hook
-
-Specialized hook for role-based access control:
-
-```typescript
-interface UseRoleReturn {
+  // Derived State
   role: UserRole | null
   isAdmin: boolean
-  isUser: boolean
-  loading: boolean
-  hasRole: (requiredRole: UserRole) => boolean
-  hasAnyRole: (roles: UserRole[]) => boolean
-}
+  isAuthenticated: boolean
 
-function useRole(): UseRoleReturn
+  // Loading States
+  loading: boolean           // Initial auth check
+  profileLoading: boolean    // Profile fetch in progress
+
+  // Error State
+  error: AuthError | null
+
+  // Actions
+  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<AuthResult>
+  signIn: (email: string, password: string) => Promise<AuthResult>
+  signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<AuthResult>
+  refreshProfile: () => Promise<void>
+  clearError: () => void
+}
 ```
 
-#### 4.2.1 Implementation Requirements
+#### 3.3.2 Profile Fetch Logic
 
-- Must consume `AuthContext` via `useAuth()`
-- Must handle loading states correctly
-- Must return stable references (use `useCallback` for functions)
-
-### 4.3 useRequireAuth Hook (New)
-
-Hook for pages that require authentication:
+The context MUST fetch profile when:
+1. Initial session is restored
+2. User signs in
+3. `onAuthStateChange` fires with `SIGNED_IN`
+4. `refreshProfile()` is called manually
 
 ```typescript
-interface UseRequireAuthOptions {
-  redirectTo?: string           // Default: '/login'
-  requiredRole?: UserRole       // Optional role requirement
-}
+async function fetchProfile(userId: string) {
+  setProfileLoading(true)
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
 
-interface UseRequireAuthReturn {
-  user: User
-  profile: Profile
-  isLoading: boolean
+  if (error) {
+    setError({ code: 'profile_fetch_failed', message: error.message })
+    setProfile(null)
+  } else {
+    setProfile(data)
+  }
+  setProfileLoading(false)
 }
-
-function useRequireAuth(options?: UseRequireAuthOptions): UseRequireAuthReturn
 ```
 
-Behavior:
-- Redirects to login if not authenticated (after loading completes)
-- Redirects to home if role requirement not met
-- Returns typed user/profile (non-null when not loading)
+#### 3.3.3 Derived State Computation
+
+```typescript
+const role = profile?.role ?? null
+const isAdmin = role === 'admin'
+const isAuthenticated = user !== null
+```
 
 ---
 
-## 5. Login/Signup Flow Requirements
+### 3.4 Login Redirect Logic
 
-### 5.1 Sign Up Flow
+#### 3.4.1 Role-Based Redirect After Sign In
 
-```
-User submits email + password
-    ↓
-Validate inputs (email format, password strength)
-    ↓
-Call supabase.auth.signUp()
-    ↓
-├─ Error → Display error message, stay on form
-└─ Success →
-      ↓
-      Email confirmation required?
-      ├─ Yes → Show "Check your email" message
-      └─ No → Auto sign-in, redirect based on role
-```
+**File:** `components/Login.tsx`
 
-#### 5.1.1 Password Requirements
-
-- Minimum 6 characters (Supabase default)
-- Display clear requirements to user
-- Show password strength indicator (optional)
-
-#### 5.1.2 Email Validation
-
-- Client-side: Basic format validation
-- Server-side: Supabase validates uniqueness
-
-### 5.2 Sign In Flow
-
-```
-User submits email + password
-    ↓
-Call supabase.auth.signInWithPassword()
-    ↓
-├─ Error → Display error message
-└─ Success →
-      ↓
-      AuthContext updates (user, session)
-      ↓
-      Profile fetched automatically
-      ↓
-      Redirect based on role:
-      ├─ Admin → /admin
-      └─ User → / (or previous intended page)
-```
-
-#### 5.2.1 Redirect Logic (Critical Fix)
-
-Current bug: Hardcoded redirect to `/admin` for all users.
-
-**Required behavior:**
+Replace hardcoded `/admin` redirect:
 
 ```typescript
-async function handleSignIn() {
-  const result = await signIn(email, password)
+const handleLogin = async (e: FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
+  setError(null)
 
-  if (!result.success) {
-    setError(result.error)
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (error) {
+    setError(error.message)
+    setLoading(false)
     return
   }
 
-  // Wait for profile to be fetched
-  // The role will be available after context updates
+  // Fetch profile to determine role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', data.user.id)
+    .single()
 
-  // Get intended destination (stored before login redirect)
-  const intendedPath = sessionStorage.getItem('intendedPath') || '/'
-  sessionStorage.removeItem('intendedPath')
+  setOpenLogin(false)
 
   // Redirect based on role
   if (profile?.role === 'admin') {
-    router.push(intendedPath.startsWith('/admin') ? intendedPath : '/admin')
+    router.push('/admin')
   } else {
-    // Non-admin users should never go to /admin
-    router.push(intendedPath.startsWith('/admin') ? '/' : intendedPath)
+    router.push('/account')  // Regular users go to account page
   }
+  router.refresh()
 }
 ```
-
-### 5.3 Sign Out Flow
-
-```
-User clicks sign out
-    ↓
-Call signOut() from context
-    ↓
-Context resets all state
-    ↓
-Redirect to home page
-```
-
-### 5.4 Password Reset Flow
-
-```
-User requests password reset
-    ↓
-Call resetPassword(email)
-    ↓
-Supabase sends email with reset link
-    ↓
-User clicks link → /reset-password?token=...
-    ↓
-User enters new password
-    ↓
-Call supabase.auth.updateUser({ password })
-    ↓
-Redirect to login with success message
-```
-
-**Required**: Create `/reset-password` page (currently missing).
 
 ---
 
-## 6. Route Protection Requirements
+### 3.5 User Name Button Component
 
-### 6.1 Middleware Protection (Server-Side)
+#### 3.5.1 Component Requirements
 
-The middleware must:
-
-1. Run on all routes except static files
-2. Check authentication for protected routes
-3. Verify role for role-restricted routes
-4. Redirect appropriately
-
-#### 6.1.1 Protected Route Patterns
-
-| Pattern | Requirement |
-|---------|-------------|
-| `/admin/*` | Must be authenticated with `role = 'admin'` |
-| `/checkout/*` | Must be authenticated (any role) |
-| `/profile/*` | Must be authenticated (any role) |
-
-#### 6.1.2 Middleware Logic
+Create `components/UserButton.tsx`:
 
 ```typescript
-// Middleware pseudo-code
-const protectedRoutes = ['/checkout', '/profile']
-const adminRoutes = ['/admin']
-
-if (adminRoutes.some(r => path.startsWith(r))) {
-  if (!user) redirect('/login')
-
-  const profile = await getProfile(user.id)
-  if (profile?.role !== 'admin') redirect('/')
+interface UserButtonProps {
+  className?: string
 }
 
-if (protectedRoutes.some(r => path.startsWith(r))) {
+function UserButton({ className }: UserButtonProps) {
+  const { user, profile, loading } = useAuth()
+  const router = useRouter()
+
+  if (loading || !user) return null
+
+  const displayName = profile?.first_name || 'Account'
+
+  return (
+    <Button
+      variant="link"
+      size="sm"
+      className={className}
+      onClick={() => router.push('/account')}
+    >
+      {displayName}
+    </Button>
+  )
+}
+```
+
+#### 3.5.2 Display Rules
+
+| State | Display |
+|-------|---------|
+| Not logged in | Don't render |
+| Logged in, no first_name | Show "Account" |
+| Logged in, has first_name | Show first name |
+
+---
+
+### 3.6 Header Navigation Updates
+
+#### 3.6.1 HeaderNav Requirements
+
+**File:** `components/HeaderNav.tsx`
+
+Current line 111-117:
+```typescript
+<Button onClick={user ? handleSignOut : () => setOpenLogin(!openLogin)}>
+  {user ? "Sign Out" : "Sign In"}
+</Button>
+```
+
+Add UserButton when logged in:
+```typescript
+{user && <UserButton />}
+<Button onClick={user ? handleSignOut : () => setOpenLogin(!openLogin)}>
+  {user ? "Sign Out" : "Sign In"}
+</Button>
+```
+
+---
+
+### 3.7 Menu Overlay Updates
+
+#### 3.7.1 MenuOverlay Requirements
+
+**File:** `components/MenuOverlay.tsx`
+
+**Current menu items (line 125-132):**
+```typescript
+{ label: "Admin", href: "/admin" }  // Shown to everyone
+```
+
+**Required behavior:**
+
+| User State | Menu Item | Link |
+|------------|-----------|------|
+| Not logged in | "Sign In" | Opens login modal |
+| Logged in as `user` | "Account" | `/account` |
+| Logged in as `admin` | "Admin" | `/admin` |
+
+#### 3.7.2 Implementation
+
+```typescript
+// In MenuOverlay.tsx
+const { user, profile, isAdmin } = useAuth()
+
+// In menu items array:
+const menuItems = [
+  { label: "Products", href: "/" },
+  { label: "Visit The Store", href: "/" },
+  { label: "About JOJO", href: "/pages/about" },
+  { label: "Privacy Policy", href: "/pages/privacy-policy" },
+  { label: "Imprint", href: "/pages/imprint" },
+  // Conditional item:
+  ...(user
+    ? [{ label: isAdmin ? "Admin" : "Account", href: isAdmin ? "/admin" : "/account" }]
+    : []
+  ),
+]
+```
+
+#### 3.7.3 Sync Login Button with Auth State
+
+Replace static "Log In" button (line 89-91):
+```typescript
+<Button onClick={user ? handleSignOut : () => openLoginModal()}>
+  {user ? "Sign Out" : "Sign In"}
+</Button>
+```
+
+---
+
+### 3.8 Account Page
+
+#### 3.8.1 Create `/account` Route
+
+**File:** `app/account/page.tsx`
+
+Page requirements:
+- Protected route (requires authentication)
+- Shows user profile information
+- Shows order history
+- Link to edit profile (future)
+
+#### 3.8.2 Account Page Layout
+
+```
+┌─────────────────────────────────────────┐
+│  Account                                │
+├─────────────────────────────────────────┤
+│  Welcome, {first_name}!                 │
+│  {email}                                │
+├─────────────────────────────────────────┤
+│  Your Orders                            │
+│  ─────────────────────────────────────  │
+│  Order #123 - Dec 15, 2025 - $99.00    │
+│  Order #122 - Dec 10, 2025 - $150.00   │
+│  ...                                    │
+│  ─────────────────────────────────────  │
+│  No orders yet? Start shopping →       │
+└─────────────────────────────────────────┘
+```
+
+#### 3.8.3 Middleware Protection
+
+Add `/account` to protected routes in `middleware.ts`:
+
+```typescript
+// Protect account routes
+if (request.nextUrl.pathname.startsWith("/account")) {
   if (!user) {
-    // Store intended path for post-login redirect
-    redirect(`/login?redirect=${encodeURIComponent(path)}`)
+    return NextResponse.redirect(new URL("/?login=true", request.url))
   }
-}
-```
-
-### 6.2 Client-Side Protection
-
-Use `useRequireAuth` hook in page components:
-
-```typescript
-// Example: Protected page component
-export default function ProfilePage() {
-  const { user, profile, isLoading } = useRequireAuth()
-
-  if (isLoading) return <LoadingSpinner />
-
-  return <ProfileContent user={user} profile={profile} />
-}
-```
-
-```typescript
-// Example: Admin-only page component
-export default function AdminPage() {
-  const { user, profile, isLoading } = useRequireAuth({ requiredRole: 'admin' })
-
-  if (isLoading) return <LoadingSpinner />
-
-  return <AdminDashboard />
 }
 ```
 
 ---
 
-## 7. Error Handling Requirements
+## 4. useRole Hook Fix
 
-### 7.1 Error Types
+### 4.1 Updated Implementation
+
+**File:** `hooks/useRole.ts`
 
 ```typescript
-interface AuthError {
-  code: string
-  message: string
-  status?: number
+'use client'
+
+import { useAuth } from '@/context/AuthContext'
+
+export type UserRole = 'user' | 'admin'
+
+export function useRole() {
+  const { role, isAdmin, loading, profileLoading } = useAuth()
+
+  const hasRole = (requiredRole: UserRole): boolean => {
+    if (loading || profileLoading) return false
+    return role === requiredRole
+  }
+
+  const hasAnyRole = (roles: UserRole[]): boolean => {
+    if (loading || profileLoading) return false
+    return role !== null && roles.includes(role)
+  }
+
+  return {
+    role,
+    isAdmin,
+    isUser: role === 'user',
+    loading: loading || profileLoading,
+    hasRole,
+    hasAnyRole,
+  }
 }
 ```
 
-### 7.2 Error Scenarios
+---
 
-| Scenario | Error Code | User Message |
-|----------|------------|--------------|
+## 5. Error Handling
+
+### 5.1 Error Scenarios
+
+| Scenario | Code | Message |
+|----------|------|---------|
 | Invalid credentials | `invalid_credentials` | "Invalid email or password" |
-| Email already exists | `email_exists` | "An account with this email already exists" |
+| Email exists | `email_exists` | "An account with this email already exists" |
 | Weak password | `weak_password` | "Password must be at least 6 characters" |
 | Network error | `network_error` | "Connection error. Please try again" |
-| Session expired | `session_expired` | "Your session has expired. Please sign in again" |
-| Profile not found | `profile_not_found` | "Account setup incomplete. Please contact support" |
-| Rate limited | `rate_limited` | "Too many attempts. Please wait and try again" |
+| Profile not found | `profile_not_found` | "Account setup incomplete" |
+| Session expired | `session_expired` | "Session expired. Please sign in again" |
 
-### 7.3 Error Display
+### 5.2 Error Display
 
-- Show errors inline near relevant form fields
-- Auto-dismiss success messages after 5 seconds
-- Persistent errors until user action
-- Clear errors when user starts typing
-
-### 7.4 Error Recovery
-
-| Error | Recovery Action |
-|-------|-----------------|
-| Session expired | Redirect to login, preserve intended path |
-| Profile not found | Attempt to create profile, show error if fails |
-| Network error | Show retry button, don't clear form |
-| Rate limited | Show countdown timer |
+- Inline errors near form fields
+- Toast notifications for async errors
+- Auto-clear on user input
 
 ---
 
-## 8. Edge Cases & Race Conditions
+## 6. Edge Cases
 
-### 8.1 Critical Edge Cases to Handle
+### 6.1 Race Conditions to Handle
 
-#### 8.1.1 Double Sign-In Prevention
+| Scenario | Solution |
+|----------|----------|
+| Sign out during profile fetch | Cancel fetch, reset state |
+| Multiple rapid sign-in attempts | Disable button during request |
+| Navigate away during auth | Clean up listeners |
+| Token refresh during request | Let Supabase handle automatically |
 
-```typescript
-// Prevent multiple simultaneous sign-in attempts
-const [isSigningIn, setIsSigningIn] = useState(false)
+### 6.2 State Synchronization
 
-async function handleSignIn() {
-  if (isSigningIn) return
-  setIsSigningIn(true)
-  try {
-    await signIn(email, password)
-  } finally {
-    setIsSigningIn(false)
-  }
-}
-```
+| Scenario | Behavior |
+|----------|----------|
+| Profile updated in another tab | Detect via `onAuthStateChange` |
+| Role changed by admin | Next page load fetches new profile |
+| Session expired | Auto sign-out, show message |
 
-#### 8.1.2 Stale Closure Prevention
+---
 
-```typescript
-// Use refs for values needed in callbacks
-const userRef = useRef(user)
-useEffect(() => {
-  userRef.current = user
-}, [user])
-```
+## 7. Database Migration
 
-#### 8.1.3 Component Unmount During Auth
+### 7.1 New Migration: Add Name Fields
 
-```typescript
-// Cancel pending operations on unmount
-useEffect(() => {
-  let isMounted = true
+**File:** `supabase/migrations/008_add_profile_name_fields.sql`
 
-  async function fetchProfile() {
-    const data = await getProfile()
-    if (isMounted) setProfile(data)
-  }
+```sql
+-- Add name fields to profiles
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS first_name TEXT,
+ADD COLUMN IF NOT EXISTS last_name TEXT;
 
-  fetchProfile()
-  return () => { isMounted = false }
-}, [user])
-```
-
-#### 8.1.4 Rapid Navigation
-
-Handle user navigating away before auth completes:
-- Don't throw errors
-- Cancel pending redirects
-- Clean up listeners
-
-### 8.2 Race Condition Prevention
-
-#### 8.2.1 Profile Fetch Race
-
-If profile fetch is in progress and user signs out:
-
-```typescript
-const fetchIdRef = useRef(0)
-
-async function fetchProfile() {
-  const currentFetchId = ++fetchIdRef.current
-
-  const data = await supabase.from('profiles').select()
-
-  // Only update if this is still the latest fetch
-  if (currentFetchId === fetchIdRef.current) {
-    setProfile(data)
-  }
-}
-```
-
-#### 8.2.2 Auth State Race
-
-If multiple `onAuthStateChange` events fire rapidly:
-
-```typescript
-// Use a queue or debounce pattern
-const processAuthChange = useMemo(
-  () => debounce(async (event, session) => {
-    // Handle auth change
-  }, 100),
-  []
-)
+-- Update the handle_new_user function to include names
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, first_name, last_name, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    NEW.raw_user_meta_data->>'first_name',
+    NEW.raw_user_meta_data->>'last_name',
+    'user'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
 ---
 
-## 9. Implementation Checklist
+## 8. Implementation Checklist
 
 ### Phase 1: Fix Critical Bugs
 
-- [ ] **Update AuthContext**
-  - [ ] Add `profile`, `role`, `isAdmin`, `isAuthenticated` to state
-  - [ ] Add `profileLoading` state
-  - [ ] Add `error` state
-  - [ ] Implement `fetchProfile()` function
-  - [ ] Call `fetchProfile()` on auth state changes
-  - [ ] Add `refreshProfile()` action
-  - [ ] Add `clearError()` action
-  - [ ] Export `UserRole` and `Profile` types
+- [ ] **AuthContext** (`context/AuthContext.tsx`)
+  - [ ] Add profile state
+  - [ ] Add role, isAdmin, isAuthenticated derived state
+  - [ ] Add profileLoading state
+  - [ ] Add error state
+  - [ ] Implement fetchProfile function
+  - [ ] Call fetchProfile on auth state changes
+  - [ ] Update signUp to accept firstName, lastName
+  - [ ] Export Profile and UserRole types
 
-- [ ] **Fix useRole Hook**
-  - [ ] Update to use correct AuthContext properties
-  - [ ] Remove invalid type import
-  - [ ] Add proper type definitions
-  - [ ] Implement `hasRole` and `hasAnyRole` correctly
+- [ ] **useRole Hook** (`hooks/useRole.ts`)
+  - [ ] Remove invalid import
+  - [ ] Define UserRole type locally or import from AuthContext
+  - [ ] Use correct properties from useAuth
 
-- [ ] **Fix Login Component**
-  - [ ] Remove hardcoded `/admin` redirect
-  - [ ] Implement role-based redirect logic
-  - [ ] Add intended path preservation
-  - [ ] Improve error display
+- [ ] **Login Redirect** (`components/Login.tsx`)
+  - [ ] Fetch profile after login
+  - [ ] Redirect based on role (admin → /admin, user → /account)
 
-### Phase 2: Enhance Robustness
+### Phase 2: Add Name Fields
 
-- [ ] **Add useRequireAuth Hook**
-  - [ ] Implement redirect logic
-  - [ ] Handle loading states
-  - [ ] Support role requirements
+- [ ] **Database Migration**
+  - [ ] Create `008_add_profile_name_fields.sql`
+  - [ ] Add first_name, last_name columns
+  - [ ] Update handle_new_user trigger
 
-- [ ] **Improve Error Handling**
-  - [ ] Map Supabase errors to user-friendly messages
-  - [ ] Add error boundaries for auth components
-  - [ ] Implement retry logic for transient failures
+- [ ] **Sign Up Form** (`components/Login.tsx`)
+  - [ ] Add firstName state
+  - [ ] Add lastName state
+  - [ ] Add First Name input field
+  - [ ] Add Last Name input field
+  - [ ] Pass names to signUp via user_metadata
 
-- [ ] **Add Loading States**
-  - [ ] Create consistent loading UI
-  - [ ] Prevent content flash during auth check
+### Phase 3: UI Components
 
-### Phase 3: Complete Features
+- [ ] **UserButton Component** (`components/UserButton.tsx`)
+  - [ ] Create component
+  - [ ] Show first name or "Account"
+  - [ ] Navigate to /account on click
 
-- [ ] **Create Reset Password Page**
-  - [ ] Build `/reset-password` route
-  - [ ] Handle token from URL
-  - [ ] Implement password update
+- [ ] **HeaderNav Updates** (`components/HeaderNav.tsx`)
+  - [ ] Import and use UserButton
+  - [ ] Show UserButton when logged in
 
-- [ ] **Improve Middleware**
-  - [ ] Add redirect URL preservation
-  - [ ] Standardize protected route patterns
+- [ ] **MenuOverlay Updates** (`components/MenuOverlay.tsx`)
+  - [ ] Import useAuth
+  - [ ] Make "Admin"/"Account" menu item conditional
+  - [ ] Sync Sign In/Sign Out button with auth state
 
----
+### Phase 4: Account Page
 
-## 10. Testing Requirements
+- [ ] **Create Account Page** (`app/account/page.tsx`)
+  - [ ] Require authentication
+  - [ ] Display profile info
+  - [ ] Display orders (future: fetch from orders table)
 
-### 10.1 Manual Test Cases
-
-| Test Case | Steps | Expected Result |
-|-----------|-------|-----------------|
-| Sign up new user | Enter valid email/password | Account created, role = 'user' |
-| Sign in as user | Enter valid credentials | Redirected to home, not /admin |
-| Sign in as admin | Enter admin credentials | Redirected to /admin |
-| Access /admin as user | Sign in as user, navigate to /admin | Redirected to home |
-| Access /admin as guest | Navigate to /admin when logged out | Redirected to login |
-| Sign out | Click sign out | All state cleared, redirected home |
-| Session restore | Sign in, close tab, reopen | Still signed in, profile loaded |
-| Token refresh | Wait for token expiry | Session refreshes automatically |
-| Invalid password | Enter wrong password | Error message shown |
-| Reset password | Request reset, click link, set new password | Password updated |
-
-### 10.2 Edge Case Tests
-
-| Test Case | Steps | Expected Result |
-|-----------|-------|-----------------|
-| Double click sign in | Click sign in rapidly | Only one request sent |
-| Sign out during profile fetch | Sign out while profile loading | No errors, state reset |
-| Navigate during sign in | Start sign in, navigate away | No errors |
-| Expired reset token | Use old reset link | Error message shown |
-| Profile missing | Delete profile, reload | Error handled gracefully |
+- [ ] **Middleware Update** (`middleware.ts`)
+  - [ ] Protect /account routes
 
 ---
 
-## 11. Security Considerations
+## 9. File Changes Summary
 
-### 11.1 Client-Side
-
-- Never store sensitive data in localStorage (except Supabase session)
-- Always validate user input before sending
-- Use HTTPS for all requests
-- Clear auth state completely on sign out
-
-### 11.2 Server-Side
-
-- RLS policies enforce data access at database level
-- Middleware verifies auth for protected routes
-- Never trust client-provided role information
-- Always fetch role from database in middleware
-
-### 11.3 Token Security
-
-- Supabase handles JWT signing and verification
-- Tokens auto-refresh before expiry
-- Refresh tokens rotated on use
-- Session invalidation clears all tokens
+| File | Action | Changes |
+|------|--------|---------|
+| `context/AuthContext.tsx` | Modify | Add profile, role, derived states, fetchProfile |
+| `hooks/useRole.ts` | Modify | Fix imports, use correct context properties |
+| `components/Login.tsx` | Modify | Add name fields, fix redirect logic |
+| `components/UserButton.tsx` | Create | New component for user name button |
+| `components/HeaderNav.tsx` | Modify | Add UserButton |
+| `components/MenuOverlay.tsx` | Modify | Conditional Admin/Account, sync auth state |
+| `app/account/page.tsx` | Create | New account/profile page |
+| `middleware.ts` | Modify | Protect /account routes |
+| `supabase/migrations/008_*.sql` | Create | Add name fields to profiles |
 
 ---
 
-## 12. Success Metrics
+## 10. Testing Checklist
 
-After implementation, the auth system should:
+### Functional Tests
 
-1. **Zero Runtime Errors**: No undefined property access, no type errors
-2. **Consistent State**: Client and server always agree on auth state
-3. **Proper Redirects**: Users land on appropriate pages based on role
-4. **Fast Loading**: Auth check completes in < 500ms
-5. **Graceful Degradation**: Network failures show helpful errors
-6. **No Flicker**: Protected content doesn't flash before redirect
+| Test | Steps | Expected |
+|------|-------|----------|
+| Sign up with name | Fill form with first/last name | Profile created with names |
+| Sign in as user | Log in as regular user | Redirect to /account |
+| Sign in as admin | Log in as admin | Redirect to /admin |
+| User name button | Sign in, check header | Shows first name, clicks to /account |
+| Menu - regular user | Sign in as user, open menu | Shows "Account" not "Admin" |
+| Menu - admin | Sign in as admin, open menu | Shows "Admin" |
+| Menu - guest | Open menu when logged out | No Admin/Account, shows Sign In |
+| Account page access | Navigate to /account when logged in | Page loads |
+| Account page protection | Navigate to /account when logged out | Redirect to home |
 
----
+### Edge Cases
 
-## Appendix A: File Structure
-
-```
-├── context/
-│   └── AuthContext.tsx          # Main auth context (to be fixed)
-├── hooks/
-│   ├── useRole.ts               # Role access hook (to be fixed)
-│   └── useRequireAuth.ts        # New: protected page hook
-├── components/
-│   └── Login.tsx                # Login/signup UI (redirect to fix)
-├── app/
-│   ├── login/
-│   │   └── page.tsx             # Login page
-│   ├── reset-password/
-│   │   └── page.tsx             # New: password reset page
-│   └── api/auth/
-│       └── signout/route.ts     # Signout endpoint
-├── utils/supabase/
-│   ├── client.ts                # Browser client (working)
-│   ├── server.ts                # Server client (working)
-│   └── middleware.ts            # Middleware client (working)
-├── middleware.ts                # Route protection (to enhance)
-└── supabase/migrations/
-    ├── 006_add_user_profiles_and_roles.sql
-    └── 007_fix_profile_insert_policy.sql
-```
+| Test | Expected |
+|------|----------|
+| Sign in, lose connection during profile fetch | Error shown, retry option |
+| Sign out during profile fetch | Clean state reset |
+| Refresh page while logged in | Session restored, profile loaded |
+| Admin demoted to user | Next login redirects to /account |
 
 ---
 
-## Appendix B: Type Definitions
+## Appendix A: Type Definitions
 
 ```typescript
 // types/auth.ts
@@ -740,6 +709,8 @@ export type UserRole = 'user' | 'admin'
 export interface Profile {
   id: string
   email: string
+  first_name: string | null
+  last_name: string | null
   role: UserRole
   created_at: string
   updated_at: string
@@ -748,17 +719,14 @@ export interface Profile {
 export interface AuthError {
   code: string
   message: string
-  status?: number
 }
 
 export interface AuthResult {
   success: boolean
   error?: string
-  data?: unknown
 }
 
 export interface AuthContextType {
-  // State
   user: User | null
   session: Session | null
   profile: Profile | null
@@ -768,9 +736,7 @@ export interface AuthContextType {
   loading: boolean
   profileLoading: boolean
   error: AuthError | null
-
-  // Actions
-  signUp: (email: string, password: string) => Promise<AuthResult>
+  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<AuthResult>
   signIn: (email: string, password: string) => Promise<AuthResult>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<AuthResult>
@@ -781,46 +747,25 @@ export interface AuthContextType {
 
 ---
 
-## Appendix C: Database Schema Reference
+## Appendix B: Component Tree
 
-```sql
--- User role enum
-CREATE TYPE user_role AS ENUM ('user', 'admin');
-
--- Profiles table
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email TEXT,
-  role user_role DEFAULT 'user' NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- RLS Policies
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
--- Users can read own profile
-CREATE POLICY "Users can view own profile"
-  ON profiles FOR SELECT
-  USING (auth.uid() = id);
-
--- Users can update own profile (except role)
-CREATE POLICY "Users can update own profile"
-  ON profiles FOR UPDATE
-  USING (auth.uid() = id);
-
--- Automatic profile creation trigger
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, role)
-  VALUES (NEW.id, NEW.email, 'user');
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION handle_new_user();
+```
+App
+├── AuthProvider (context/AuthContext.tsx)
+│   └── ... all components have access to auth
+│
+├── HeaderNav (components/HeaderNav.tsx)
+│   ├── UserButton (when logged in)
+│   ├── Sign In / Sign Out Button
+│   └── Login Modal (components/Login.tsx)
+│
+├── MenuOverlay (components/MenuOverlay.tsx)
+│   ├── Sign In / Sign Out (synced with auth)
+│   └── Admin / Account (conditional on role)
+│
+├── /admin/* (protected: admin only)
+│   └── Middleware checks role
+│
+└── /account (protected: any authenticated user)
+    └── Account page with profile + orders
 ```
