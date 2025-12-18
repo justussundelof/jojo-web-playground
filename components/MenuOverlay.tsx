@@ -3,9 +3,13 @@
 import { motion, type Variants } from "framer-motion";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import ThemeSwitch from "./ThemeSwitch";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import Login from "./Login";
+import { AnimatePresence } from "framer-motion";
 
 const overlayVariants: Variants = {
   hidden: { opacity: 0, x: -100 },
@@ -58,6 +62,9 @@ export default function MenuOverlay({
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const categories = ["Clothing", "Accessories", "Shoes", "Bags"];
+  const { user, isAdmin, signOut } = useAuth();
+  const router = useRouter();
+  const [openLogin, setOpenLogin] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -66,106 +73,143 @@ export default function MenuOverlay({
     };
   }, [open]);
 
-  return (
-    <motion.div
-      className="fixed top-0 left-0 right-0 z-50 w-full bg-accent shadow-2xl  "
-      variants={overlayVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-    >
-      <motion.div
-        className="flex justify-between w-full items-center px-3 pt-1 "
-        variants={sectionVariants}
-      >
-        <Link href="/">
-          <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center   leading-tight w-full    ">
-            JOJO STUDIO
-          </h1>
-        </Link>
+  const handleSignOut = async () => {
+    await signOut();
+    setOpen(false);
+    router.push("/");
+    router.refresh();
+  };
 
-        <div className="flex justify-end items-center w-1/2  ">
-          <ThemeSwitch />
-          <Button variant="link" size="sm" className=" ">
-            Log In
-          </Button>
-          <Button variant="link" size="sm" className=" ">
-            Cart
-          </Button>
-          <Button
-            onClick={() => setOpen(false)}
-            variant="link"
-            size="sm"
-            className=""
+  const handleSignInClick = () => {
+    setOpenLogin(true);
+  };
+
+  // Build menu items based on auth state
+  const baseMenuItems = [
+    { label: "Products", href: "/" },
+    { label: "Visit The Store", href: "/" },
+    { label: "About JOJO", href: "/pages/about" },
+    { label: "Privacy Policy", href: "/pages/privacy-policy" },
+    { label: "Imprint", href: "/pages/imprint" },
+  ];
+
+  // Add conditional Admin/Account item for logged in users
+  const menuItems = user
+    ? [
+        ...baseMenuItems,
+        {
+          label: isAdmin ? "Admin" : "Account",
+          href: isAdmin ? "/admin" : "/account",
+        },
+      ]
+    : baseMenuItems;
+
+  return (
+    <>
+      <motion.div
+        className="fixed top-0 left-0 right-0 z-50 w-full bg-accent shadow-2xl  "
+        variants={overlayVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+      >
+        <motion.div
+          className="flex justify-between w-full items-center px-3 pt-1 "
+          variants={sectionVariants}
+        >
+          <Link href="/">
+            <h1 className="text-sm tracking-wider font-serif-display flex items-center justify-center   leading-tight w-full    ">
+              JOJO STUDIO
+            </h1>
+          </Link>
+
+          <div className="flex justify-end items-center w-1/2  ">
+            <ThemeSwitch />
+            <Button
+              variant="link"
+              size="sm"
+              onClick={user ? handleSignOut : handleSignInClick}
+            >
+              {user ? "Sign Out" : "Sign In"}
+            </Button>
+            <Button variant="link" size="sm" className=" ">
+              Cart
+            </Button>
+            <Button
+              onClick={() => setOpen(false)}
+              variant="link"
+              size="sm"
+              className=""
+            >
+              Close
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* HEADER CONTENT */}
+        <div className=" jojo-main-wrapper-top h-full w-full flex flex-col lg:flex-row bg-accent">
+          <motion.div
+            className="h-auto w-full  lg:w-1/2   flex flex-col  jojo-container-padding space-y-6"
+            variants={sectionVariants}
           >
-            Close
-          </Button>
+            <div className="grid w-full  items-center   text-xs  px-3">
+              <Input
+                className=" border-black placeholder:text-black placeholder:text-xs max-w-sm  text-xs rounded-none shadow-none "
+                id="text"
+                type="text"
+                placeholder="Search JOJO STUDIO..."
+              />
+            </div>
+            <nav>
+              <motion.ul
+                className="flex flex-col  text-sm font-mono"
+                variants={listVariants}
+              >
+                {menuItems.map((item) => (
+                  <motion.li key={item.label} variants={itemVariants}>
+                    <Link href={item.href} onClick={() => setOpen(false)}>
+                      <Button variant="link" size="sm">
+                        {item.label}
+                      </Button>
+                    </Link>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            </nav>
+          </motion.div>
+          <motion.div
+            className=" w-full h-full lg:h-screen lg:w-1/2 bg-accent text-accent-foreground flex flex-col jojo-container-padding space-y-6"
+            variants={sectionVariants}
+          >
+            <div className="">
+              <Button variant="link" size="sm" className="">
+                Latest Added
+              </Button>
+            </div>
+
+            {/* Categories */}
+            <motion.div
+              className="grid grid-cols-2 lg:grid-cols-4  gap-0"
+              variants={listVariants}
+            >
+              {categories.map((category) => (
+                <motion.div className="" key={category} variants={itemVariants}>
+                  <Button variant="link" size="sm">
+                    {category}
+                  </Button>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
         </div>
       </motion.div>
 
-      {/* HEADER CONTENT */}
-      <div className=" jojo-main-wrapper-top h-full w-full flex flex-col lg:flex-row bg-accent">
-        <motion.div
-          className="h-auto w-full  lg:w-1/2   flex flex-col  jojo-container-padding space-y-6"
-          variants={sectionVariants}
-        >
-          <div className="grid w-full  items-center   text-xs  px-3">
-            <Input
-              className=" border-black placeholder:text-black placeholder:text-xs max-w-sm  text-xs rounded-none shadow-none "
-              id="text"
-              type="text"
-              placeholder="Search JOJO STUDIO..."
-            />
-          </div>
-          <nav>
-            <motion.ul
-              className="flex flex-col  text-sm font-mono"
-              variants={listVariants}
-            >
-              {[
-                { label: "Products", href: "/" },
-                { label: "Visit The Store", href: "/" },
-                { label: "About JOJO", href: "/pages/about" },
-                { label: "Privacy Policy", href: "/pages/privacy-policy" },
-                { label: "Imprint", href: "/pages/imprint" },
-                { label: "Admin", href: "/admin" },
-              ].map((item) => (
-                <motion.li key={item.label} variants={itemVariants}>
-                  <Link href={item.href} onClick={() => setOpen(false)}>
-                    <Button variant="link" size="sm">
-                      {item.label}
-                    </Button>
-                  </Link>
-                </motion.li>
-              ))}
-            </motion.ul>
-          </nav>
-        </motion.div>
-        <motion.div
-          className=" w-full h-full lg:h-screen lg:w-1/2 bg-accent text-accent-foreground flex flex-col jojo-container-padding space-y-6"
-          variants={sectionVariants}
-        >
-          <div className="">
-            <Button variant="link" size="sm" className="">
-              Latest Added
-            </Button>
-          </div>
-
-          {/* Categories */}
-          <motion.div
-            className="grid grid-cols-2 lg:grid-cols-4  gap-0"
-            variants={listVariants}
-          >
-            {categories.map((category) => (
-              <motion.div className="" key={category} variants={itemVariants}>
-                <Button variant="link" size="sm">
-                  {category}
-                </Button>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </div>
-    </motion.div>
+      {/* Login Modal */}
+      <AnimatePresence>
+        {openLogin && (
+          <Login openLogin={openLogin} setOpenLogin={setOpenLogin} />
+        )}
+      </AnimatePresence>
+    </>
   );
 }

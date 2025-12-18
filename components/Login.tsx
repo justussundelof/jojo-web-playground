@@ -22,6 +22,8 @@ export default function Login({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,8 @@ export default function Login({
     setEmail("");
     setPassword("");
     setConfirmPassword("");
+    setFirstName("");
+    setLastName("");
     setError(null);
     setSuccess(null);
   };
@@ -41,12 +45,13 @@ export default function Login({
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent double submission
     setLoading(true);
     setError(null);
 
     const supabase = createClient();
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -54,18 +59,46 @@ export default function Login({
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
-      setOpenLogin(false);
-      router.push("/admin");
-      router.refresh();
+      return;
     }
+
+    // Fetch profile to determine role for redirect
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+
+    setOpenLogin(false);
+
+    // Redirect based on role
+    if (profile?.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/account");
+    }
+    router.refresh();
   };
 
   const handleSignUp = async (e: FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent double submission
     setLoading(true);
     setError(null);
     setSuccess(null);
+
+    // Validation
+    if (!firstName.trim()) {
+      setError("First name is required");
+      setLoading(false);
+      return;
+    }
+
+    if (!lastName.trim()) {
+      setError("Last name is required");
+      setLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -84,15 +117,23 @@ export default function Login({
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+        },
+      },
     });
 
     if (error) {
       setError(error.message);
       setLoading(false);
     } else {
-      setSuccess("Account created! Please check your email to verify your account.");
+      setSuccess(
+        "Account created! Please check your email to verify your account."
+      );
       setLoading(false);
-      // Optionally auto-switch to sign-in after a delay
+      // Auto-switch to sign-in after a delay
       setTimeout(() => {
         switchView("sign-in");
       }, 3000);
@@ -101,6 +142,7 @@ export default function Login({
 
   const handleForgotPassword = async (e: FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent double submission
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -194,6 +236,28 @@ export default function Login({
             {success}
           </div>
         )}
+
+        <div>
+          <Input
+            type="text"
+            placeholder="First Name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            className="max-w-sm"
+          />
+        </div>
+
+        <div>
+          <Input
+            type="text"
+            placeholder="Last Name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+            className="max-w-sm"
+          />
+        </div>
 
         <div>
           <Input

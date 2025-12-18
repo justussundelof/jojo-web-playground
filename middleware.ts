@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser();
 
-    // Protect admin routes
+    // Protect admin routes - requires admin role
     if (request.nextUrl.pathname.startsWith("/admin")) {
         if (!user) {
             // Redirect to home if not authenticated
@@ -55,6 +55,14 @@ export async function middleware(request: NextRequest) {
 
         if (profile?.role !== "admin") {
             // Redirect to home if not admin
+            return NextResponse.redirect(new URL("/", request.url));
+        }
+    }
+
+    // Protect account routes - requires authentication (any role)
+    if (request.nextUrl.pathname.startsWith("/account")) {
+        if (!user) {
+            // Redirect to home if not authenticated
             return NextResponse.redirect(new URL("/", request.url));
         }
     }

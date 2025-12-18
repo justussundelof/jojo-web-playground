@@ -10,6 +10,7 @@ import ThemeSwitch from "./ThemeSwitch";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import Login from "./Login";
 import MenuOverlay from "./MenuOverlay";
+import UserButton from "./UserButton";
 import { usePathname, useRouter } from "next/navigation";
 
 const headerVariants: Variants = {
@@ -39,7 +40,7 @@ const headerItemVariants: Variants = {
 
 export default function HeaderNav() {
   const { currentSite, toggleSite } = useSite();
-  const { user, profile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [openLogin, setOpenLogin] = useState(false);
@@ -71,18 +72,13 @@ export default function HeaderNav() {
                 JOJO STUDIO
               </h1>
             </Link>
-            {user && profile?.first_name && (
-              <span className="text-xs font-serif-book opacity-60">
-                Hi, {profile.first_name}
-              </span>
-            )}
           </div>
 
           <motion.div
             variants={headerVariants}
             initial="hidden"
             animate="visible"
-            className="flex justify-end 
+            className="flex justify-end
            "
           >
             <motion.div variants={headerItemVariants}>
@@ -108,12 +104,19 @@ export default function HeaderNav() {
               </motion.div>
             </span>
 
+            {/* User name button - only shows when logged in */}
+            <motion.div variants={headerItemVariants}>
+              <UserButton />
+            </motion.div>
+
             <motion.div variants={headerItemVariants}>
               <Button
-                onClick={user ? handleSignOut : () => setOpenLogin(!openLogin)} variant="link"
+                onClick={user ? handleSignOut : () => setOpenLogin(!openLogin)}
+                variant="link"
                 size="sm"
               >
-                {user ? "Sign Out" : "Sign In"}              </Button>
+                {user ? "Sign Out" : "Sign In"}
+              </Button>
             </motion.div>
             <motion.div variants={headerItemVariants}>
               <Button variant="link" size="sm" className="">
