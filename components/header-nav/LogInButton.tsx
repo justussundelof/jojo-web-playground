@@ -12,7 +12,7 @@ export default function LogInButton({
   setOpenLogin: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const router = useRouter();
-  const { user, profile, signOut, loading, profileLoading } = useAuth();
+  const { user, signOut, loading } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -23,33 +23,21 @@ export default function LogInButton({
   if (loading) {
     return (
       <Button variant="link" size="sm" disabled>
-        ...
+        Loading...
       </Button>
     );
   }
 
-  // User is logged in
+  // User is logged in - show Log out button
   if (user) {
-    const displayName = profile?.first_name || "Account";
-
     return (
-      <div className="flex items-center">
-        <Button
-          variant="link"
-          size="sm"
-          onClick={() => router.push("/account")}
-          disabled={profileLoading}
-        >
-          {profileLoading ? "..." : displayName}
-        </Button>
-        <Button variant="link" size="sm" onClick={handleSignOut}>
-          Sign Out
-        </Button>
-      </div>
+      <Button variant="link" size="sm" onClick={handleSignOut}>
+        Log out
+      </Button>
     );
   }
 
-  // User is not logged in
+  // User is not logged in - show Sign In button
   return (
     <Button onClick={() => setOpenLogin(!openLogin)} variant="link" size="sm">
       Sign In
