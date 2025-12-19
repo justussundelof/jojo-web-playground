@@ -6,6 +6,9 @@ import type { Product } from "@/types/product";
 import { optimizeCloudinaryImage } from "@/utils/cloudinary";
 import { motion } from "framer-motion";
 import { Badge } from "../ui/badge";
+import { HeartIcon, HeartFilledIcon } from "@radix-ui/react-icons";
+import { useWishlist } from "@/context/WishlistContext";
+import { Button } from "../ui/button";
 
 interface ProductCardProps {
   product: Product;
@@ -18,6 +21,10 @@ export default function ProductCard({
   showText,
   setShowText,
 }: ProductCardProps) {
+  const { isInWishlist, addItem, removeItem } = useWishlist();
+  const productId = product.id ?? 0;
+  const isWished = isInWishlist(productId);
+
   const imageUrl = product.img_url
     ? optimizeCloudinaryImage(product.img_url, {
         width: 800,
@@ -29,6 +36,22 @@ export default function ProductCard({
     : null;
 
   const isOutOfStock = !product.in_stock;
+
+  const toggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!productId) return;
+    if (isWished) {
+      removeItem(productId);
+    } else {
+      addItem({
+        productId,
+        name: product.title || "Product",
+        price: product.price || 0,
+        image: product.img_url || "",
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -53,6 +76,19 @@ export default function ProductCard({
                 NO IMAGE
               </div>
             )}
+            {/* Wishlist Heart Button */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="absolute top-2 right-2 z-20 bg-background/80 hover:bg-background"
+              onClick={toggleWishlist}
+            >
+              {isWished ? (
+                <HeartFilledIcon className="h-4 w-4 text-red-500" />
+              ) : (
+                <HeartIcon className="h-4 w-4" />
+              )}
+            </Button>
           </div>
         </CardContent>
 

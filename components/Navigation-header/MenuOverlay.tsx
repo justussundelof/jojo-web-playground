@@ -3,11 +3,12 @@
 import { motion, type Variants } from "framer-motion";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const overlayVariants: Variants = {
   hidden: { opacity: 0, x: -100 },
@@ -62,6 +63,29 @@ export default function MenuOverlay({
   const categories = ["Clothing", "Accessories", "Shoes", "Bags"];
   const pathname = usePathname();
   const isAdminPage = pathname.startsWith("/admin");
+  const { isAuthenticated, isAdmin } = useAuth();
+
+  // Build navigation items based on user authentication and role
+  const navItems = useMemo(() => {
+    const baseItems = [
+      { label: "Products", href: "/" },
+      { label: "Visit The Store", href: "/" },
+      { label: "About JOJO", href: "/pages/about" },
+      { label: "Privacy Policy", href: "/pages/privacy-policy" },
+      { label: "Imprint", href: "/pages/imprint" },
+    ];
+
+    // Add Profile or Admin link based on user role
+    if (isAuthenticated) {
+      if (isAdmin) {
+        baseItems.push({ label: "Admin", href: "/admin" });
+      } else {
+        baseItems.push({ label: "Profile", href: "/profile" });
+      }
+    }
+
+    return baseItems;
+  }, [isAuthenticated, isAdmin]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -98,14 +122,7 @@ export default function MenuOverlay({
               className="flex flex-col  text-sm font-mono"
               variants={listVariants}
             >
-              {[
-                { label: "Products", href: "/" },
-                { label: "Visit The Store", href: "/" },
-                { label: "About JOJO", href: "/pages/about" },
-                { label: "Privacy Policy", href: "/pages/privacy-policy" },
-                { label: "Imprint", href: "/pages/imprint" },
-                { label: "Admin", href: "/admin" },
-              ].map((item) => (
+              {navItems.map((item) => (
                 <motion.li key={item.label} variants={itemVariants}>
                   <Link href={item.href} onClick={() => setOpen(false)}>
                     <Button variant="link" size="sm">
