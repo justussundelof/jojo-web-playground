@@ -1,6 +1,6 @@
 import React from "react";
 import AdminSidebar from "@/components/AdminSideBar";
-import HeaderNav from "@/components/header-nav/HeaderNav";
+import HeaderNav from "@/components/Navigation-header/HeaderNav";
 import { ProductProvider } from "@/context/ProductContext";
 
 export default function AdminLayout({

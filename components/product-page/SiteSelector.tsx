@@ -30,7 +30,7 @@ export default function SiteSelector() {
       {currentSite === "neutral" && (
         <motion.section
           className={`
-      w-full h-screen pt-[10vh] lg:pt-[20vh] px-1 pb-1 grid grid-cols-1 lg:grid-cols-2 grid-rows-2 lg:grid-rows-1 `}
+      w-full h-screen pt-9 px-1 pb-1 grid grid-cols-1 lg:grid-cols-2 grid-rows-2 lg:grid-rows-1 `}
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -40,13 +40,12 @@ export default function SiteSelector() {
             variants={columnVariants}
           >
             <div className=" w-full h-full relative z-10 flex flex-col items-center justify-center ">
-              <Button
-                size="lg"
-                className=""
+              <button
                 onClick={() => setCurrentSite("sale")}
+                className={`h-9  font-display font-medium text-2xl px-2 whitespace-nowrap pb-1     border-2 border-background text-background flex items-center pt-0.5  hover:text-background hover:bg-secondary hover:border-secondary transition-all cursor-pointer`}
               >
                 For Sale
-              </Button>
+              </button>
             </div>
           </motion.div>
           <motion.div
@@ -54,13 +53,12 @@ export default function SiteSelector() {
             variants={columnVariants}
           >
             <div className="w-full h-full relative z-10 flex flex-col items-center justify-center ">
-              <Button
-                size="lg"
-                className=""
-                onClick={() => setCurrentSite("rent")}
+              <button
+                onClick={() => setCurrentSite("sale")}
+                className={`h-9  font-display font-medium text-2xl px-2 whitespace-nowrap pb-1     border-2 border-background text-background flex items-center pt-0.5  hover:text-background hover:bg-secondary hover:border-secondary transition-all cursor-pointer`}
               >
                 For Rent
-              </Button>
+              </button>
             </div>
           </motion.div>
         </motion.section>

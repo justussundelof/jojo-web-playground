@@ -67,7 +67,7 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
   ];
 
   return (
-    <div className="relative w-full  pl-10 pt-1 pb-1 ">
+    <div className="relative w-full pl-1 pr-1  lg:pl-10 pt-1 pb-1 ">
       {openForm && <ProductForm toggleForm={toggleForm} mode="create" />}
 
       <motion.div
@@ -75,7 +75,7 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className={` grid bg-popover  ${layouts[layoutIndex]} gap-x-1.5 gap-y-1.5 relative`}
+        className={` grid   ${layouts[layoutIndex]} gap-x-1.5 gap-y-1.5 relative`}
       >
         {products.map((product, index) => {
           // Optimize image URL if available

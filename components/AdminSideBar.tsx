@@ -43,20 +43,24 @@ export default function AdminSidebar() {
       initial="hidden"
       animate="visible"
       variants={sidebarVariants}
-      className="fixed top-9 lg:top-0 left-0 right-0 z-40 bg-accent w-full lg:w-9 h-9 lg:h-screen"
+      className="fixed bottom-0 lg:top-0 left-0 right-0 z-40  bg-secondary w-full lg:w-9 h-9 lg:h-screen"
     >
       <motion.div
         variants={sidebarItemVariants}
-        className="relative pt-0 lg:pt-[20vh]  flex flex-row items-center justify-between lg:flex-col  lg:justify-between lg:items-center w-full h-9 lg:h-full lg:pb-[10vh]"
+        className="relative pt-0 lg:pt-[20vh] grid grid-cols-3  lg:flex  items-center justify-between lg:flex-col  lg:justify-between lg:items-center w-full h-9 lg:h-full lg:pb-[10vh] "
       >
-        <Button variant="ghost" size="sm" className="">
-          <PlusIcon />
-        </Button>
         <span>
-          <Button variant="ghost" size="sm" className="">
+          <Button variant="secondary" size="icon" className="">
             <PersonIcon />
           </Button>
-          <Button variant="ghost" size="sm" className="">
+        </span>
+        <span className="flex flex-row justify-center lg:flex-col lg:justify-center lg:items-end">
+          <Button variant="secondary" size="icon" className="">
+            <PlusIcon />
+          </Button>
+        </span>
+        <span className="flex flex-row justify-end lg:flex-col lg:justify-center lg:items-end">
+          <Button variant="secondary" size="icon" className="">
             <GearIcon />
           </Button>
         </span>

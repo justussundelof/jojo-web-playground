@@ -19,7 +19,13 @@ export default function Login({
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn, signUp, resetPassword, profile, loading: authLoading } = useAuth();
+  const {
+    signIn,
+    signUp,
+    resetPassword,
+    profile,
+    loading: authLoading,
+  } = useAuth();
   const [view, setView] = useState<AuthView>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,9 +36,9 @@ export default function Login({
 
   // Store redirect URL from query params when modal opens
   useEffect(() => {
-    const redirectTo = searchParams.get('redirectTo');
-    if (redirectTo && typeof window !== 'undefined') {
-      sessionStorage.setItem('intendedPath', redirectTo);
+    const redirectTo = searchParams.get("redirectTo");
+    if (redirectTo && typeof window !== "undefined") {
+      sessionStorage.setItem("intendedPath", redirectTo);
     }
   }, [searchParams]);
 
@@ -71,20 +77,23 @@ export default function Login({
   useEffect(() => {
     if (!authLoading && profile) {
       // Get intended destination (stored before login redirect)
-      const intendedPath = typeof window !== 'undefined'
-        ? sessionStorage.getItem('intendedPath') || '/'
-        : '/';
+      const intendedPath =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("intendedPath") || "/"
+          : "/";
 
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('intendedPath');
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("intendedPath");
       }
 
       // Redirect based on role
-      if (profile.role === 'admin') {
-        router.push(intendedPath.startsWith('/admin') ? intendedPath : '/admin');
+      if (profile.role === "admin") {
+        router.push(
+          intendedPath.startsWith("/admin") ? intendedPath : "/admin"
+        );
       } else {
         // Non-admin users should never go to /admin
-        router.push(intendedPath.startsWith('/admin') ? '/' : intendedPath);
+        router.push(intendedPath.startsWith("/admin") ? "/" : intendedPath);
       }
       router.refresh();
     }
@@ -116,7 +125,9 @@ export default function Login({
       return;
     }
 
-    setSuccess("Account created! Please check your email to verify your account.");
+    setSuccess(
+      "Account created! Please check your email to verify your account."
+    );
     setLoading(false);
     // Optionally auto-switch to sign-in after a delay
     setTimeout(() => {
@@ -183,8 +194,9 @@ export default function Login({
           {loading ? "Signing in..." : "Sign In"}
         </Button>
       </form>
-      <div className="flex flex-col items-start justify-start w-full">
+      <div className="flex flex-col items-start justify-start w-full text-accent-foreground">
         <Button
+          className=""
           variant="link"
           size="lg"
           onClick={() => switchView("sign-up")}
@@ -260,11 +272,7 @@ export default function Login({
         </Button>
       </form>
       <div className="flex flex-col items-start justify-start w-full">
-        <Button
-          variant="link"
-          size="lg"
-          onClick={() => switchView("sign-in")}
-        >
+        <Button variant="link" size="lg" onClick={() => switchView("sign-in")}>
           Already have an account? Sign in
         </Button>
       </div>
@@ -307,11 +315,7 @@ export default function Login({
         </Button>
       </form>
       <div className="flex flex-col items-start justify-start w-full">
-        <Button
-          variant="link"
-          size="lg"
-          onClick={() => switchView("sign-in")}
-        >
+        <Button variant="link" size="lg" onClick={() => switchView("sign-in")}>
           Back to sign in
         </Button>
       </div>
@@ -319,7 +323,7 @@ export default function Login({
   );
 
   return (
-    <div className="fixed inset-0 top-0 right-0 left-auto z-40 h-screen overflow-hidden flex flex-col items-start justify-start px-3 w-full lg:w-1/2 bg-background">
+    <div className="fixed inset-0 top-0 right-0 left-auto z-50 h-screen overflow-hidden flex flex-col items-start justify-start px-3 w-full lg:w-1/2 bg-accent border-l border-l-accent-foreground ">
       <Button
         variant="link"
         size="sm"

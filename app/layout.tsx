@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import localFont from "next/font/local";
 import { SiteProvider } from "../context/SiteContext";
-import HeaderNav from "@/components/header-nav/HeaderNav";
+import HeaderNav from "@/components/Navigation-header/HeaderNav";
 import { ContentProvider } from "@/context/ContentContext";
 import { getContent } from "@/lib/getContent";
 
@@ -53,7 +53,23 @@ export const gtMono = localFont({
 });
 
 export const gtCompressed = localFont({
-  src: "./fonts/GTAmerica/GT-America-Compressed-Black.woff",
+  src: [
+    {
+      path: "./fonts/GTAmerica/GT-America-Compressed-Regular.woff",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GTAmerica/GT-America-Compressed-Medium.woff",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GTAmerica/GT-America-Compressed-Bold.woff",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-gtCompressed",
   display: "swap",
 });

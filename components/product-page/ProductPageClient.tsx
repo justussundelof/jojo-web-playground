@@ -4,7 +4,7 @@ import { useSite } from "@/context/SiteContext";
 import ProductsGrid from "./ProductsGrid";
 import SiteSelector from "./SiteSelector";
 import { useState, useEffect } from "react";
-import LoaderGIF from "../LoaderGIF";
+import LoaderJoJo from "../LoaderJoJo";
 import CookieModal from "../CookieModal";
 
 export default function ProductPageClient({}: {}) {
@@ -31,7 +31,7 @@ export default function ProductPageClient({}: {}) {
       </section>
 
       {currentSite === "neutral" ? null : showLoader ? (
-        <LoaderGIF />
+        <LoaderJoJo />
       ) : (
         <ProductsGrid />
       )}

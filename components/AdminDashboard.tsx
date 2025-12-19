@@ -52,7 +52,7 @@ export default function AdminDashboard() {
               <motion.span
                 key={mainPage.slug}
                 layout
-                className="col-span-1lg:col-span-2 bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-all  flex items-center justify-center cursor-pointer font-serif-book text-sm aspect-3/4"
+                className="col-span-1lg:col-span-2 bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground  transition-all  flex items-center justify-center cursor-pointer font-serif-book text-sm aspect-3/4"
                 onClick={() => setEditing(mainPage.slug as any)}
               >
                 {mainPage.label}
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
                       panelRefs.current[mainPage.slug] = el;
                     }}
                     layout
-                    className="col-span-4 row-span-3  shadow-xl flex flex-col items-start justify-start bg-popover "
+                    className="col-span-4 row-span-3   flex flex-col items-start justify-start bg-accent text-accent-foreground border border-secondary "
                   >
                     <Button
                       variant="default"
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
               <motion.span
                 key={otherPage.slug}
                 layout
-                className="col-span-1 bg-accent text-accent-foreground hover:bg-primary hover:text-primary-foreground transition-all aspect-3/4 flex items-center justify-center cursor-pointer font-serif-book text-sm    "
+                className="col-span-1 bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground transition-all aspect-3/4 flex items-center justify-center cursor-pointer font-serif-book text-sm    "
                 onClick={() => setEditing(otherPage.slug as any)}
               >
                 {otherPage.label}

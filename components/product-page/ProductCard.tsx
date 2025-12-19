@@ -58,25 +58,29 @@ export default function ProductCard({
 
         {/* OUT OF STOCK OVERLAY (always visible) */}
         {isOutOfStock && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm">
-            <span className="text-xs font-mono tracking-wide uppercase">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-secondary/90">
+            <span className="text-xs  font-mono tracking-wide uppercase text-secondary-foreground">
               Out of stock
             </span>
           </div>
         )}
         {/* MOBILE INFO – always visible */}
         {showText && (
-          <CardDescription className="flex flex-col">
-            <h2 className="text-sm font-serif-book truncate w-2/3">
+          <CardDescription className="flex flex-col border-b-secondary border-b pt-1">
+            <Badge variant="secondary" className=" font-mono pt-0 px-1">
               {product.title}
-            </h2>
-            <span className="flex gap-x-3 items-baseline">
-              <p className="text-xs font-mono uppercase">{product.price} SEK</p>
-              {product.size && (
-                <p className="text-xs font-serif-display uppercase text-muted ">
-                  {product.size.name}
-                </p>
-              )}
+            </Badge>
+            <span className="flex justify-between items-baseline w-full">
+              <p className="text-xs font-mono uppercase text-secondary">
+                {product.price} SEK
+              </p>
+
+              <Badge
+                variant="ghost"
+                className="font-mono text-xs pt-0 px-1 hover:border-transparent hover:text-accent"
+              >
+                {product.size?.name}
+              </Badge>
             </span>
           </CardDescription>
         )}

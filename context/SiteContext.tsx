@@ -7,7 +7,7 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import LoaderGIF from "@/components/LoaderGIF"; // adjust path
+import LoaderJoJo from "@/components/LoaderJoJo";
 
 export type SiteType = "sale" | "rent" | "neutral";
 
@@ -41,7 +41,7 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
     <SiteContext.Provider
       value={{ currentSite, setCurrentSite, toggleSite, loading }}
     >
-      {loading && <LoaderGIF />}
+      {loading && <LoaderJoJo />}
       {children}
     </SiteContext.Provider>
   );

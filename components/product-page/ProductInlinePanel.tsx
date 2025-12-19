@@ -5,6 +5,7 @@ import { optimizeCloudinaryImage } from "@/utils/cloudinary";
 import Image from "next/image";
 import Link from "next/link";
 import { forwardRef } from "react";
+import { Badge } from "../ui/badge";
 
 interface ProductInlinePanelProps {
   product: Product;
@@ -34,7 +35,7 @@ const ProductInlinePanel = forwardRef<HTMLDivElement, ProductInlinePanelProps>(
           col-span-2
           row-span-2
           bg-background
-          shadow-xl
+     border-b-secondary border-b
           overflow-hidden
           flex
           relative
@@ -42,7 +43,7 @@ const ProductInlinePanel = forwardRef<HTMLDivElement, ProductInlinePanelProps>(
       >
         <Button
           onClick={onClose}
-          className="absolute top-2 right-2 z-10 invert"
+          className="absolute top-2 left-2 z-10 "
           variant="link"
           size="sm"
         >
@@ -64,9 +65,11 @@ const ProductInlinePanel = forwardRef<HTMLDivElement, ProductInlinePanelProps>(
                   NO IMAGE
                 </div>
               )}
-              <div className="absolute bottom-0 left-0 right-0 flex flex-col lg:flex-row justify-between bg-background p-1">
-                <h2 className="text-sm font-serif-book">{product.title}</h2>
-                <p className="text-xs font-mono uppercase">
+              <div className="absolute bottom-0 left-0 right-0 flex flex-col lg:flex-row justify-between lg:items-baseline bg-background px-0 py-1">
+                <Badge variant="secondary" className=" font-mono pt-0 px-0.5">
+                  {product.title}
+                </Badge>
+                <p className="text-xs font-mono uppercase text-secondary">
                   {product.price} SEK
                 </p>
               </div>

@@ -64,7 +64,6 @@ export function ProductProvider({ children }: { children: ReactNode }) {
             .eq("article_id", product.id)
             .eq("is_primary", true)
             .maybeSingle();
-
           return {
             ...product,
             img_url: images?.image_url || product.img_url,

@@ -1,6 +1,8 @@
-import { Button } from "../ui/button";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
+
+import { Button } from "../ui/button";
+import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
 
 export default function ThemeSwitch() {
   const { theme, setTheme } = useTheme();
@@ -19,11 +21,12 @@ export default function ThemeSwitch() {
   return (
     <>
       <Button
-        size="sm"
-        variant="link"
         onClick={() => setTheme(isDark ? "light" : "dark")}
+        variant="ghost"
+        size="icon"
+        className={` `}
       >
-        {isDark ? "Dark / Light" : "Light / Dark"}
+        {isDark ? <SunIcon /> : <MoonIcon />}
       </Button>
     </>
   );

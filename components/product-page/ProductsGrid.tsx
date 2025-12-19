@@ -12,8 +12,7 @@ import { motion, type Variants, LayoutGroup } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useRef } from "react";
 import { Badge } from "../ui/badge";
-
-import LoaderGIF from "../LoaderGIF";
+import LoaderJoJo from "../LoaderJoJo";
 
 type ButtonVariant = VariantProps<typeof buttonVariants>["variant"];
 type ButtonSize = VariantProps<typeof buttonVariants>["size"];
@@ -108,7 +107,7 @@ export default function ProductsGrid({}: {}) {
   }, [pathname]);
 
   if (loading) {
-    return <LoaderGIF />;
+    return <LoaderJoJo />;
   }
 
   // Error state
@@ -140,7 +139,7 @@ export default function ProductsGrid({}: {}) {
         } relative w-full overflow-visible jojo-main-wrapper-top`}
       >
         {/* Sticky header outside the motion/grid */}
-        <div className="sticky top-8 z-30  shadow w-full py-1">
+        <div className="sticky top-10 z-20   w-full py-1 bg-background">
           <div className=" flex justify-between items-baseline font-mono text-xs gap-3 w-full ">
             <span className="flex items-baseline font-mono text-xs gap-1">
               <Badge variant="outline">FILTER</Badge>
@@ -149,7 +148,7 @@ export default function ProductsGrid({}: {}) {
               </Badge>
             </span>
             <Badge
-              variant={`${showText ? "default" : "outline"}`}
+              variant={`${showText ? "secondary" : "outline"}`}
               onClick={handleShowText}
             >
               T
@@ -164,7 +163,7 @@ export default function ProductsGrid({}: {}) {
           className={` grid  ${
             layouts[layoutIndex]
           } gap-x-1.5 gap-y-1.5 relative  pb-1 ${
-            currentSite === "sale" ? "bg-background" : "bg-foreground"
+            currentSite === "sale" ? "bg-background" : "bg-background"
           }  `}
         >
           {products.map((product) => (
