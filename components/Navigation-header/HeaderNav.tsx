@@ -11,7 +11,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import Login from "../Login";
 import MenuOverlay from "./MenuOverlay";
 import CartModal from "../CartModal";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import LogInButton from "./LogInButton";
 import { Cross1Icon, HamburgerMenuIcon } from "@radix-ui/react-icons";
 import { useCart } from "@/context/CartContext";
@@ -49,8 +49,22 @@ export default function HeaderNav() {
   const { itemCount } = useCart();
 
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const isAdminPage = pathname.startsWith("/admin");
   const isAccent = open || isAdminPage;
+
+  // Check for ?login=true query param and auto-open login modal
+  useEffect(() => {
+    const loginParam = searchParams.get("login");
+    if (loginParam === "true") {
+      setOpenLogin(true);
+      // Clear the query param from URL without page reload
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("login");
+      router.replace(newUrl.pathname + newUrl.search, { scroll: false });
+    }
+  }, [searchParams, router]);
 
   return (
     <>

@@ -3,11 +3,11 @@
 import { motion, type Variants } from "framer-motion";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Link from "next/link";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 const overlayVariants: Variants = {
@@ -62,8 +62,24 @@ export default function MenuOverlay({
 }) {
   const categories = ["Clothing", "Accessories", "Shoes", "Bags"];
   const pathname = usePathname();
+  const router = useRouter();
   const isAdminPage = pathname.startsWith("/admin");
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, signOut } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut();
+      setOpen(false);
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   // Build navigation items based on user authentication and role
   const navItems = useMemo(() => {
@@ -131,6 +147,18 @@ export default function MenuOverlay({
                   </Link>
                 </motion.li>
               ))}
+              {isAuthenticated && (
+                <motion.li variants={itemVariants}>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                  >
+                    {isLoggingOut ? "Logging out..." : "Log Out"}
+                  </Button>
+                </motion.li>
+              )}
             </motion.ul>
           </nav>
         </motion.div>
