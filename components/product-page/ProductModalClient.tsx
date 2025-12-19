@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { optimizeCloudinaryImage } from "@/utils/cloudinary";
-import { HeartIcon, Share2Icon } from "@radix-ui/react-icons";
+import { HeartIcon, HeartFilledIcon, Share2Icon } from "@radix-ui/react-icons";
 import { Button } from "../ui/button";
 import { useProducts } from "@/context/ProductContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 import ProductForm from "../ProductForm";
 import { useEffect, useState } from "react";
 
@@ -21,17 +23,49 @@ export default function ProductModalClient({
 }: ProductModalProps) {
   const router = useRouter();
   const { products, updateProduct } = useProducts();
+  const { isInWishlist, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlist();
+  const { addItem: addToCart, isInCart } = useCart();
 
   const productId = Number(id);
   const product = products.find((p) => p.id === productId);
+  const isWished = isInWishlist(productId);
+  const inCart = isInCart(productId);
 
   // Hooks are always called
   const [title, setTitle] = useState(product?.title ?? "");
   const [price, setPrice] = useState(product?.price ?? 0);
   const [description, setDescription] = useState(product?.description ?? "");
   const [imgUrl, setImgUrl] = useState(product?.img_url ?? "");
+  const [addedToCart, setAddedToCart] = useState(false);
 
   const toggleForm = () => router.back();
+
+  const toggleWishlist = () => {
+    if (!product || !productId) return;
+    if (isWished) {
+      removeFromWishlist(productId);
+    } else {
+      addToWishlist({
+        productId,
+        name: product.title || "Product",
+        price: product.price || 0,
+        image: product.img_url || "",
+      });
+    }
+  };
+
+  const handleAddToCart = () => {
+    if (!product || !productId) return;
+    addToCart({
+      productId,
+      name: product.title || "Product",
+      price: product.price || 0,
+      image: product.img_url || "",
+      quantity: 1,
+    });
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && router.back();
@@ -82,8 +116,12 @@ export default function ProductModalClient({
                 <p className="text-sm">{product.description} blablbla</p>
               </div>
               <div className="flex flex-col justify-center items-center">
-                <Button variant="ghost" size="icon">
-                  <HeartIcon />
+                <Button variant="ghost" size="icon" onClick={toggleWishlist}>
+                  {isWished ? (
+                    <HeartFilledIcon className="text-red-500" />
+                  ) : (
+                    <HeartIcon />
+                  )}
                 </Button>
                 <Button variant="ghost" size="icon" className="block lg:hidden">
                   <Share2Icon />
@@ -91,8 +129,13 @@ export default function ProductModalClient({
               </div>
             </div>
             <div className="col-start-1 col-span-2 flex flex-col justify-center items-start mt-4 gap-2 ">
-              <Button className="w-full" size="lg">
-                Add to cart
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleAddToCart}
+                disabled={!product?.in_stock}
+              >
+                {addedToCart ? "Added to cart!" : product?.in_stock ? "Add to cart" : "Out of stock"}
               </Button>
             </div>
 

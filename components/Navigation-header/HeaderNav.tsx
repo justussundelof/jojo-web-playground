@@ -10,9 +10,11 @@ import ThemeSwitch from "./ThemeSwitch";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import Login from "../Login";
 import MenuOverlay from "./MenuOverlay";
+import CartModal from "../CartModal";
 import { usePathname } from "next/navigation";
 import LogInButton from "./LogInButton";
 import { Cross1Icon, HamburgerMenuIcon } from "@radix-ui/react-icons";
+import { useCart } from "@/context/CartContext";
 
 const headerVariants: Variants = {
   hidden: {},
@@ -43,6 +45,8 @@ export default function HeaderNav() {
   const { currentSite, toggleSite } = useSite();
   const [open, setOpen] = useState(false);
   const [openLogin, setOpenLogin] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const { itemCount } = useCart();
 
   const pathname = usePathname();
   const isAdminPage = pathname.startsWith("/admin");
@@ -103,8 +107,18 @@ export default function HeaderNav() {
               className="hidden lg:block"
               variants={headerItemVariants}
             >
-              <Button variant="link" size="sm" className="">
+              <Button
+                variant="link"
+                size="sm"
+                className="relative"
+                onClick={() => setCartOpen(true)}
+              >
                 Cart
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-primary text-primary-foreground text-xs min-w-4 h-4 flex items-center justify-center rounded-full px-1">
+                    {itemCount}
+                  </span>
+                )}
               </Button>
             </motion.div>
 
@@ -147,6 +161,8 @@ export default function HeaderNav() {
           <Login openLogin={openLogin} setOpenLogin={setOpenLogin} />
         )}
       </AnimatePresence>
+
+      <CartModal open={cartOpen} setOpen={setCartOpen} />
     </>
   );
 }
