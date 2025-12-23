@@ -22,11 +22,11 @@ export default function ThemeSwitch() {
     <>
       <Button
         onClick={() => setTheme(isDark ? "light" : "dark")}
-        variant="ghost"
-        size="icon"
-        className={` `}
+        variant="secondary"
+        size="sm"
+        className={`uppercase `}
       >
-        {isDark ? <SunIcon /> : <MoonIcon />}
+        {isDark ? "Light Mode" : "Dark Mode"}
       </Button>
     </>
   );

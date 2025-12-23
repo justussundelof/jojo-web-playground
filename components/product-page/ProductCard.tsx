@@ -6,24 +6,32 @@ import type { Product } from "@/types/product";
 import { optimizeCloudinaryImage } from "@/utils/cloudinary";
 import { motion } from "framer-motion";
 import { Badge } from "../ui/badge";
-import { HeartIcon, HeartFilledIcon } from "@radix-ui/react-icons";
+import {
+  HeartIcon,
+  HeartFilledIcon,
+  EnterFullScreenIcon,
+  SizeIcon,
+} from "@radix-ui/react-icons";
 import { useWishlist } from "@/context/WishlistContext";
 import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
   product: Product;
   showText: boolean;
   setShowText: React.Dispatch<React.SetStateAction<boolean>>;
+  handleToggleActiveProduct: (productId: number | null) => void;
+  activeProduct: number | null;
+  openModal: (productId: number) => void;
 }
 
 export default function ProductCard({
   product,
   showText,
-  setShowText,
+
+  handleToggleActiveProduct,
 }: ProductCardProps) {
-  const { isInWishlist, addItem, removeItem } = useWishlist();
   const productId = product.id ?? 0;
-  const isWished = isInWishlist(productId);
 
   const imageUrl = product.img_url
     ? optimizeCloudinaryImage(product.img_url, {
@@ -35,22 +43,26 @@ export default function ProductCard({
       })
     : null;
 
-  const isOutOfStock = !product.in_stock;
+  const router = useRouter();
 
-  const toggleWishlist = (e: React.MouseEvent) => {
+  const openModal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/product/${productId}`);
+  };
+
+  const isOutOfStock = !product.in_stock;
+  const { toggleItem, isInWishlist } = useWishlist();
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!productId) return;
-    if (isWished) {
-      removeItem(productId);
-    } else {
-      addItem({
-        productId,
-        name: product.title || "Product",
-        price: product.price || 0,
-        image: product.img_url || "",
-      });
-    }
+
+    toggleItem({
+      productId,
+      name: product.title || "Product",
+      price: product.price || 0,
+      image: product.img_url || "",
+    });
   };
 
   return (
@@ -63,7 +75,7 @@ export default function ProductCard({
       <Card className="relative w-full bg-background overflow-hidden border-0 cursor-pointer ">
         {/* IMAGE */}
         <CardContent className="p-0">
-          <div className="relative w-full aspect-3/4">
+          <div onClick={openModal} className="relative w-full aspect-3/4">
             {imageUrl ? (
               <Image
                 src={imageUrl}
@@ -76,18 +88,17 @@ export default function ProductCard({
                 NO IMAGE
               </div>
             )}
-            {/* Wishlist Heart Button */}
+
             <Button
-              variant="ghost"
-              size="icon-sm"
-              className="absolute top-2 right-2 z-20 bg-background/80 hover:bg-background"
-              onClick={toggleWishlist}
+              variant="secondary"
+              size="icon"
+              className="absolute top-0 left-0 z-20 aspect-square h-p  "
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleActiveProduct(productId);
+              }}
             >
-              {isWished ? (
-                <HeartFilledIcon className="h-4 w-4 text-red-500" />
-              ) : (
-                <HeartIcon className="h-4 w-4" />
-              )}
+              <SizeIcon />
             </Button>
           </div>
         </CardContent>
@@ -103,17 +114,31 @@ export default function ProductCard({
         {/* MOBILE INFO – always visible */}
         {showText && (
           <CardDescription className="flex flex-col border-b-secondary border-b pt-1">
-            <Badge variant="secondary" className=" font-mono pt-0 px-1">
-              {product.title}
-            </Badge>
-            <span className="flex justify-between items-baseline w-full">
+            <span className="flex justify-between items-center w-full">
+              <Badge
+                variant="secondary"
+                className="font-mono pt-0 px-1 cursor-pointer"
+                onClick={openModal}
+              >
+                {product.title}
+              </Badge>
+
+              <Button size="icon" variant="link" onClick={handleWishlistClick}>
+                {isInWishlist(productId) ? (
+                  <HeartFilledIcon className="text-secondary" />
+                ) : (
+                  <HeartIcon />
+                )}
+              </Button>
+            </span>
+            <span className="flex justify-between items-baseline w-ful pr-">
               <p className="text-xs font-mono uppercase text-secondary">
                 {product.price} SEK
               </p>
 
               <Badge
                 variant="ghost"
-                className="font-mono text-xs pt-0 px-1 hover:border-transparent hover:text-accent"
+                className="font-mono text-xs hover:border-transparent hover:text-accent"
               >
                 {product.size?.name}
               </Badge>

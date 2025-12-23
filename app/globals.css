@@ -7,7 +7,7 @@
   }
 
   .jojo-main-wrapper-top {
-    @apply pt-[10vh] lg:pt-[20vh] px-1 pb-1;
+    @apply pt-32 pb-1;
   }
 
   .jojo-container-padding {
@@ -59,8 +59,9 @@
   --font-serif-display-italic: var(--font-gtSectraDisplayItalic);
   --font-serif-densed: var(--font-CLTSerifDensed);
   --font-serif-wide: var(--font-CLTSerifWide);
+  --font-extended: var(--font-gtExtended);
 
-  --radius: 0rem;
+  --radius: 0.5rem;
   --shadow-x: 0px;
   --shadow-y: 1px;
   --shadow-blur: 2px;
@@ -125,6 +126,7 @@
   --font-serif-display-italic: var(--font-gtSectraDisplayItalic);
   --font-serif-densed: var(--font-CLTSerifDensed);
   --font-serif-wide: var(--font-CLTSerifWide);
+  --font-extended: var(--font-gtExtended);
   --radius: 0rem;
   --shadow-x: 0px;
   --shadow-y: 1px;
@@ -189,6 +191,7 @@
   --font-serif-display-italic: var(--font-gtSectraDisplayItalic);
   --font-serif-densed: var(--font-CLTSerifDensed);
   --font-serif-wide: var(--font-CLTSerifWide);
+  --font-extended: var(--font-gtExtended);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

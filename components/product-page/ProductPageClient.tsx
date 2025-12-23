@@ -3,39 +3,23 @@
 import { useSite } from "@/context/SiteContext";
 import ProductsGrid from "./ProductsGrid";
 import SiteSelector from "./SiteSelector";
-import { useState, useEffect } from "react";
 import LoaderJoJo from "../LoaderJoJo";
-import CookieModal from "../CookieModal";
+import FloatingNav from "../Navigation-header/FloatingNav";
 
-export default function ProductPageClient({}: {}) {
-  const { currentSite } = useSite();
-
-  const [showLoader, setShowLoader] = useState(true);
-
-  useEffect(() => {
-    if (currentSite !== "neutral") {
-      const timer = setTimeout(() => {
-        setShowLoader(false);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    } else {
-      setShowLoader(true);
-    }
-  }, [currentSite]);
+export default function ProductPageClient() {
+  const { currentSite, loading } = useSite();
 
   return (
-    <div className="bg-background">
+    <div className="bg-background relative">
       <section>
         <SiteSelector />
       </section>
 
-      {currentSite === "neutral" ? null : showLoader ? (
-        <LoaderJoJo />
-      ) : (
-        <ProductsGrid />
-      )}
-      <CookieModal />
+      {currentSite === "neutral" && null}
+
+      {currentSite !== "neutral" && loading && <LoaderJoJo loading={loading} />}
+
+      {currentSite !== "neutral" && !loading && <ProductsGrid />}
     </div>
   );
 }

@@ -75,6 +75,48 @@ export const gtCompressed = localFont({
   display: "swap",
 });
 
+export const gtExtended = localFont({
+  src: [
+    {
+      path: "./fonts/GTAmerica/GT-America-Extended-Thin.woff",
+      weight: "100",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GTAmerica/GT-America-Extended-Ultra-Light.woff",
+      weight: "200",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GTAmerica/GT-America-Extended-Light.woff",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GTAmerica/GT-America-Extended-Regular.woff",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GTAmerica/GT-America-Extended-Medium.woff",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GTAmerica/GT-America-Extended-Bold.woff",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GTAmerica/GT-America-Extended-Black.woff",
+      weight: "900",
+      style: "normal",
+    },
+  ],
+  variable: "--font-gtExtended",
+  display: "swap",
+});
+
 export const CLTSerifDensed = localFont({
   src: "./fonts/CLT/Aujournuit-Densed.woff2",
   variable: "--font-CLTSerifDensed",
@@ -127,27 +169,27 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${gtCompressed.variable} ${gtSans.variable} ${gtMono.variable} ${CLTSerifDensed.variable} ${CLTSerifRegular.variable} ${CLTSerifWide.variable} ${gtSectraDisplay.variable} ${gtSectraDisplayItalic.variable} ${gtSectraBook.variable} antialiased bg-background`}
+        className={`${gtCompressed.variable} ${gtSans.variable} ${gtMono.variable} ${CLTSerifDensed.variable} ${CLTSerifRegular.variable} ${CLTSerifWide.variable} ${gtSectraDisplay.variable} ${gtSectraDisplayItalic.variable} ${gtSectraBook.variable} ${gtExtended.variable} antialiased bg-background`}
       >
         <AuthProvider>
           <CartProvider>
             <WishlistProvider>
               <ProductProvider>
                 <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-              >
-                <SiteProvider>
-                  <ContentProvider pages={pages} posts={posts}>
-                    <HeaderNav />
+                  attribute="class"
+                  defaultTheme="system"
+                  enableSystem
+                  disableTransitionOnChange
+                >
+                  <SiteProvider>
+                    <ContentProvider pages={pages} posts={posts}>
+                      <HeaderNav />
 
-                    {children}
-                    {modal}
-                  </ContentProvider>
-                </SiteProvider>
-              </ThemeProvider>
+                      {children}
+                      {modal}
+                    </ContentProvider>
+                  </SiteProvider>
+                </ThemeProvider>
               </ProductProvider>
             </WishlistProvider>
           </CartProvider>

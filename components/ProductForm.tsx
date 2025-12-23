@@ -30,11 +30,11 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 interface ProductFormProps {
   mode: "create" | "edit";
   initialProduct?: Article;
-  toggleForm: () => void;
+  closeModal: () => void;
 }
 
 export default function ProductForm({
-  toggleForm,
+  closeModal,
   mode,
   initialProduct,
 }: ProductFormProps) {
@@ -451,7 +451,7 @@ export default function ProductForm({
       }
 
       router.refresh();
-      toggleForm();
+      closeModal();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);
@@ -484,7 +484,7 @@ export default function ProductForm({
       if (error) throw error;
 
       // Refresh admin page and close modal
-      toggleForm();
+      closeModal();
       router.refresh();
     } catch (err) {
       console.error("Failed to delete product:", err);
@@ -499,7 +499,7 @@ export default function ProductForm({
       onSubmit={handleSubmit}
     >
       <div className="col-start-1 col-span-2 flex justify-between items-center w-full ">
-        <Button onClick={toggleForm} variant="link" className="">
+        <Button onClick={closeModal} variant="link" className="">
           Close
         </Button>
       </div>

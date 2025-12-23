@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2  text-sm cursor-pointer font-serif-book font-normal  transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-1  text-sm cursor-pointer  whitespace-nowrap rounded-none    transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
@@ -14,20 +14,24 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border border-secondary text-secondary bg-transparent  hover:bg-secondary hover:text-secondary-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border border-secondary text-secondary bg-transparent  hover:bg-secondary bg-transparent text-secondary border  hover:text-background dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary font-display text-background hover:bg-background  border border-secondary hover:text-secondary dark:bg-input/30 dark:border-input dark:hover:bg-input/50 ",
+
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 font-serif-book",
-        link: "text-secondary underline-offset-4 hover:underline font-serif-book",
+          "text-secondary hover:bg-transparent hover:text-accent-foreground dark:hover:bg-accent/50 font-serif-book",
+        link: "text-secondary underline-offset-4 hover:underline font-extended font-light",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3 ",
-        sm: "h-8 text-xs  gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
+        default: "h-9 px-2 pb-1 text-2xl font-normal font-display  ",
+
+        sm: "h-6 px-1 pb-0.5 text-sm  tracking-wide   flex items-start justify-start ",
+
+        smRow:
+          "h-6 px-1 pb-0.5 text-sm font-normal tracking-wide flex flex-row items-center justify-between",
+
+        lg: "h-10 rounded-md px-6 has-[>svg]:px-4 ",
+        icon: " h-6 aspect-square",
       },
     },
     defaultVariants: {

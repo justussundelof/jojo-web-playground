@@ -3,10 +3,12 @@
 import React, {
   createContext,
   useContext,
-  useState,
-  ReactNode,
   useEffect,
+  useMemo,
+  useCallback,
+  ReactNode,
 } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import LoaderJoJo from "@/components/LoaderJoJo";
 
 export type SiteType = "sale" | "rent" | "neutral";
@@ -21,27 +23,54 @@ interface SiteContextProps {
 const SiteContext = createContext<SiteContextProps | undefined>(undefined);
 
 export const SiteProvider = ({ children }: { children: ReactNode }) => {
-  const [currentSite, setCurrentSite] = useState<SiteType>("neutral");
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const siteFromUrl = searchParams.get("site") as SiteType | null;
+
+  const currentSite: SiteType = useMemo(() => {
+    return siteFromUrl ?? "neutral";
+  }, [siteFromUrl]);
+
+  const [loading, setLoading] = React.useState(false);
+
+  const updateSiteInUrl = useCallback(
+    (site: SiteType) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (site === "neutral") {
+        params.delete("site");
+      } else {
+        params.set("site", site);
+      }
+
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  const setCurrentSite = (site: SiteType) => {
+    setLoading(true);
+    updateSiteInUrl(site);
+  };
 
   const toggleSite = () => {
     setLoading(true);
-    setCurrentSite((prev) => (prev === "sale" ? "rent" : "sale"));
+    updateSiteInUrl(currentSite === "sale" ? "rent" : "sale");
   };
 
-  // Whenever currentSite changes, stop loading after a short delay
   useEffect(() => {
-    if (currentSite !== "neutral") {
-      const timer = setTimeout(() => setLoading(false), 500); // adjust duration as needed
-      return () => clearTimeout(timer);
+    if (loading) {
+      const t = setTimeout(() => setLoading(false), 400);
+      return () => clearTimeout(t);
     }
-  }, [currentSite]);
+  }, [loading]);
 
   return (
     <SiteContext.Provider
       value={{ currentSite, setCurrentSite, toggleSite, loading }}
     >
-      {loading && <LoaderJoJo />}
+      {loading && <LoaderJoJo loading />}
       {children}
     </SiteContext.Provider>
   );

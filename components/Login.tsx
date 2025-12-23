@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,7 @@ export default function Login({
   openLogin: boolean;
   setOpenLogin: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  if (!openLogin) return null;
-
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const router = useRouter();
   const searchParams = useSearchParams();
   const {
@@ -33,6 +32,8 @@ export default function Login({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [waitingForProfile, setWaitingForProfile] = useState(false);
+  const hasRedirectedRef = useRef(false);
 
   // Store redirect URL from query params when modal opens
   useEffect(() => {
@@ -41,6 +42,49 @@ export default function Login({
       sessionStorage.setItem("intendedPath", redirectTo);
     }
   }, [searchParams]);
+
+  // Handle redirect after successful login when profile is loaded
+  useEffect(() => {
+    if (waitingForProfile && !authLoading && profile && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
+
+      // Get intended destination (stored before login redirect)
+      const intendedPath =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("intendedPath") || "/"
+          : "/";
+
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("intendedPath");
+      }
+
+      // Redirect based on role
+      if (profile.role === "admin") {
+        router.push(
+          intendedPath.startsWith("/admin") ? intendedPath : "/admin"
+        );
+      } else {
+        // Non-admin users should never go to /admin
+        router.push(intendedPath.startsWith("/admin") ? "/" : intendedPath);
+      }
+      router.refresh();
+
+      // Close modal after redirect is initiated
+      setOpenLogin(false);
+      setWaitingForProfile(false);
+    }
+  }, [waitingForProfile, profile, authLoading, router, setOpenLogin]);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!openLogin) {
+      hasRedirectedRef.current = false;
+      setWaitingForProfile(false);
+    }
+  }, [openLogin]);
+
+  // Conditional return AFTER all hooks
+  if (!openLogin) return null;
 
   const resetForm = () => {
     setEmail("");
@@ -68,36 +112,11 @@ export default function Login({
       return;
     }
 
-    // Close the modal
-    setOpenLogin(false);
+    // Don't close modal yet - wait for profile to load
+    // The redirect useEffect will handle closing and redirecting
+    setWaitingForProfile(true);
     setLoading(false);
   };
-
-  // Handle redirect after successful login when profile is loaded
-  useEffect(() => {
-    if (!authLoading && profile) {
-      // Get intended destination (stored before login redirect)
-      const intendedPath =
-        typeof window !== "undefined"
-          ? sessionStorage.getItem("intendedPath") || "/"
-          : "/";
-
-      if (typeof window !== "undefined") {
-        sessionStorage.removeItem("intendedPath");
-      }
-
-      // Redirect based on role
-      if (profile.role === "admin") {
-        router.push(
-          intendedPath.startsWith("/admin") ? intendedPath : "/admin"
-        );
-      } else {
-        // Non-admin users should never go to /admin
-        router.push(intendedPath.startsWith("/admin") ? "/" : intendedPath);
-      }
-      router.refresh();
-    }
-  }, [profile, authLoading, router]);
 
   const handleSignUp = async (e: FormEvent) => {
     e.preventDefault();
@@ -186,19 +205,20 @@ export default function Login({
         </div>
 
         <Button
-          size="lg"
+          size="default"
+          variant="secondary"
           type="submit"
-          disabled={loading}
+          disabled={loading || waitingForProfile}
           className="w-full max-w-sm"
         >
-          {loading ? "Signing in..." : "Sign In"}
+          {loading ? "Signing in..." : waitingForProfile ? "Loading profile..." : "Sign In"}
         </Button>
       </form>
       <div className="flex flex-col items-start justify-start w-full text-accent-foreground">
         <Button
-          className=""
-          variant="link"
-          size="lg"
+          className="w-full max-w-sm"
+          variant="outline"
+          size="default"
           onClick={() => switchView("sign-up")}
         >
           Create an account
@@ -263,7 +283,8 @@ export default function Login({
         </div>
 
         <Button
-          size="lg"
+          size="default"
+          variant="outline"
           type="submit"
           disabled={loading}
           className="w-full max-w-sm"
@@ -305,12 +326,7 @@ export default function Login({
           />
         </div>
 
-        <Button
-          size="lg"
-          type="submit"
-          disabled={loading}
-          className="w-full max-w-sm"
-        >
+        <Button size="lg" type="submit" disabled={loading} className="">
           {loading ? "Sending..." : "Send Reset Link"}
         </Button>
       </form>
@@ -323,14 +339,14 @@ export default function Login({
   );
 
   return (
-    <div className="fixed inset-0 top-0 right-0 left-auto z-50 h-screen overflow-hidden flex flex-col items-start justify-start px-3 w-full lg:w-1/2 bg-accent border-l border-l-accent-foreground ">
+    <div className="fixed inset-0 top-0 right-0 left-auto z-50 h-screen overflow-hidden flex flex-col items-start justify-start px-3 w-full lg:w-1/2 bg-accent  ">
       <Button
-        variant="link"
+        variant="outline"
         size="sm"
-        className="absolute top-0 z-50 left-0"
+        className="absolute top-1 z-50 left-1"
         onClick={() => setOpenLogin(!openLogin)}
       >
-        Close [x]
+        CLOSE
       </Button>
       <div className="mt-[20vh] flex flex-col w-full items-start justify-start space-y-3">
         {view === "sign-in" && renderSignIn()}
