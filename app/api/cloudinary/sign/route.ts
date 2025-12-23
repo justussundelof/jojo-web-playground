@@ -12,6 +12,23 @@ cloudinary.config({
 
 export async function POST(request: Request) {
   try {
+    // Check Cloudinary configuration
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const apiKey = process.env.CLOUDINARY_API_KEY
+    const apiSecret = process.env.CLOUDINARY_API_SECRET
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      console.error('Missing Cloudinary environment variables:', {
+        cloudName: !!cloudName,
+        apiKey: !!apiKey,
+        apiSecret: !!apiSecret
+      })
+      return NextResponse.json(
+        { error: 'Cloudinary not configured. Please set environment variables.' },
+        { status: 500 }
+      )
+    }
+
     // Check if user is authenticated
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
@@ -19,7 +36,7 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized. Please log in to upload images.' },
         { status: 401 }
       )
     }
@@ -37,15 +54,15 @@ export async function POST(request: Request) {
     // Generate signature
     const signature = cloudinary.utils.api_sign_request(
       uploadParams,
-      process.env.CLOUDINARY_API_SECRET!
+      apiSecret
     )
 
     // Return signature and params to client
     return NextResponse.json({
       signature,
       timestamp,
-      cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-      apiKey: process.env.CLOUDINARY_API_KEY,
+      cloudName,
+      apiKey,
       folder: 'jojo-shop/products',
     })
   } catch (error) {

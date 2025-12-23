@@ -234,31 +234,44 @@ export default function ProductForm({
       });
 
       if (!signResponse.ok) {
-        throw new Error("Failed to get upload signature");
+        const errorData = await signResponse.json().catch(() => ({}));
+        console.error("Signature API error:", signResponse.status, errorData);
+        if (signResponse.status === 401) {
+          throw new Error("Not authenticated. Please log in to upload images.");
+        }
+        throw new Error(errorData.error || "Failed to get upload signature");
       }
 
-      const { signature, timestamp, cloudName, apiKey, folder } =
-        await signResponse.json();
+      const signData = await signResponse.json();
+      const { signature, timestamp, cloudName, apiKey, folder } = signData;
+
+      // Validate required fields
+      if (!cloudName || !apiKey || !signature) {
+        console.error("Missing Cloudinary credentials:", { cloudName: !!cloudName, apiKey: !!apiKey, signature: !!signature });
+        throw new Error("Cloudinary not configured. Check environment variables.");
+      }
 
       // Prepare form data for Cloudinary
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("signature", signature);
-      formData.append("timestamp", timestamp.toString());
-      formData.append("api_key", apiKey);
-      formData.append("folder", folder);
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      uploadFormData.append("signature", signature);
+      uploadFormData.append("timestamp", timestamp.toString());
+      uploadFormData.append("api_key", apiKey);
+      uploadFormData.append("folder", folder);
 
       // Upload to Cloudinary
       const uploadResponse = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
         {
           method: "POST",
-          body: formData,
+          body: uploadFormData,
         }
       );
 
       if (!uploadResponse.ok) {
-        throw new Error("Upload to Cloudinary failed");
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        console.error("Cloudinary upload error:", uploadResponse.status, errorData);
+        throw new Error(errorData.error?.message || "Upload to Cloudinary failed");
       }
 
       const data = await uploadResponse.json();
@@ -267,7 +280,7 @@ export default function ProductForm({
       return data.secure_url;
     } catch (error) {
       console.error("Upload error:", error);
-      return null;
+      throw error; // Re-throw to let handleSubmit catch it
     }
   };
 
@@ -499,14 +512,14 @@ export default function ProductForm({
       onSubmit={handleSubmit}
     >
       <div className="col-start-1 col-span-2 flex justify-between items-center w-full ">
-        <Button onClick={closeModal} variant="link" className="">
+        <Button type="button" onClick={closeModal} variant="link" className="">
           Close
         </Button>
       </div>
 
       {error && (
-        <div className="mb-6 border border-red-600 px-4 py-3 text-red-600">
-          {error}
+        <div className="col-start-1 col-span-2 mb-6 border border-red-600 px-4 py-3 text-red-600 bg-red-50">
+          <strong>Error:</strong> {error}
         </div>
       )}
 

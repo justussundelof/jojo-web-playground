@@ -58,7 +58,7 @@ export default function AdminDashboard() {
         <div className="pl-1 lg:pl-10 pr-1 pb-1 w-full flex-col bg- grid grid-cols-2 lg:grid-cols-12 pt-11 ">
           <div className="col-span-2  lg:col-span-10 grid grid-cols-2 lg:grid-cols-6 auto-rows-fr items-start justify-start gap-1 ">
             <Button variant="secondary" onClick={() => setOpenForm(true)}>
-              Add/Edit Products
+              + Add New Product
             </Button>
             {openForm && <ProductForm closeModal={closeModal} mode="create" />}
 
