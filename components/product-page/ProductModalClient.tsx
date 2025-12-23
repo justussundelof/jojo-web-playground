@@ -144,18 +144,15 @@ export default function ProductModalClient({
                   {product.title}
                 </h1>
 
-                <p className="text-sm leading-snug text-secondary pb-4 font-extended font-light  max-w-sm">
-                  Cropped, loose fitting, parka featuring seven pockets and
-                  multi-function hood design. OTTO 958 rubber injected velcro
-                  patch for multiple placement options. Iridescent "O" motif in
-                  custom eight point pattern on back side. Custom overspray
-                  "netting" motif on various locations. Made from 100% Bawełna
-                  Cotton Ripstop.
-                </p>
+                {product.description && (
+                  <p className="text-sm leading-snug text-secondary pb-4 font-extended font-light max-w-sm">
+                    {product.description}
+                  </p>
+                )}
                 <div className="flex flex-col items-start justify-start text-xs py-2 border-t border-t-secondary border-b border-b-secondary w-full mb-4">
                   <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
-                    Brand/Designer:{" "}
-                    <strong className="font-normal">{product.designer}</strong>
+                    Category:{" "}
+                    <strong className="font-normal">{product.category?.name}</strong>
                   </span>
                   <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
                     Size:{" "}
@@ -163,14 +160,21 @@ export default function ProductModalClient({
                       {product.size?.name}
                     </strong>
                   </span>
-                  <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
-                    Measurements:
-                    <strong className="font-normal">-</strong>
-                  </span>
+                  {product.tag && (
+                    <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
+                      Tag:{" "}
+                      <strong className="font-normal">{product.tag.name}</strong>
+                    </span>
+                  )}
                   <span className="flex justify-start items-baseline gap-x-1  font-mono font-bold text-secondary uppercase w-full">
                     Price:{" "}
-                    <strong className="font-normal">{product.price}</strong>
+                    <strong className="font-normal">{product.price} kr</strong>
                   </span>
+                  {!product.for_sale && (
+                    <span className="flex justify-start items-baseline gap-x-1 font-mono font-bold text-secondary uppercase w-full mt-1">
+                      <strong className="font-normal text-amber-600">Uthyrning</strong>
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center justify-start space-x-2 w-full">
                   <Button
@@ -204,18 +208,15 @@ export default function ProductModalClient({
                   {product.title}
                 </h1>
 
-                <p className="text-sm leading-snug text-secondary pb-4 font-extended font-light  max-w-sm">
-                  Cropped, loose fitting, parka featuring seven pockets and
-                  multi-function hood design. OTTO 958 rubber injected velcro
-                  patch for multiple placement options. Iridescent "O" motif in
-                  custom eight point pattern on back side. Custom overspray
-                  "netting" motif on various locations. Made from 100% Bawełna
-                  Cotton Ripstop.
-                </p>
+                {product.description && (
+                  <p className="text-sm leading-snug text-secondary pb-4 font-extended font-light max-w-sm">
+                    {product.description}
+                  </p>
+                )}
                 <div className="flex flex-col items-start justify-start text-xs py-1 border-t border-t-secondary border-b border-b-secondary w-full mb-4">
                   <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
-                    Brand/Designer:{" "}
-                    <strong className="font-normal">{product.designer}</strong>
+                    Category:{" "}
+                    <strong className="font-normal">{product.category?.name}</strong>
                   </span>
                   <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
                     Size:{" "}
@@ -223,14 +224,21 @@ export default function ProductModalClient({
                       {product.size?.name}
                     </strong>
                   </span>
-                  <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
-                    Measurements:
-                    <strong className="font-normal">-</strong>
-                  </span>
+                  {product.tag && (
+                    <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
+                      Tag:{" "}
+                      <strong className="font-normal">{product.tag.name}</strong>
+                    </span>
+                  )}
                   <span className="flex justify-start items-baseline gap-x-1  font-mono font-bold text-secondary uppercase w-full">
                     Price:{" "}
-                    <strong className="font-normal">{product.price}</strong>
+                    <strong className="font-normal">{product.price} kr</strong>
                   </span>
+                  {!product.for_sale && (
+                    <span className="flex justify-start items-baseline gap-x-1 font-mono font-bold text-secondary uppercase w-full mt-1">
+                      <strong className="font-normal text-amber-600">Uthyrning</strong>
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center justify-start space-x-2 py-1 w-full">
                   <Button
