@@ -50,12 +50,12 @@ export default function CartModal({ open, setOpen }: CartModalProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 100 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 top-0 right-0 left-auto z-50 h-screen overflow-y-auto flex flex-col items-start justify-start p-4 w-md lg:w-1/2 bg-accent border-l border-l-accent-foreground"
+          className="fixed inset-0 top-0 right-0 left-auto z-50 h-screen overflow-y-auto flex flex-col items-start justify-start p-4 w-md lg:w-md bg-background border-l border-l-accent-foreground"
         >
           <Button
-            variant="secondary"
+            variant="ghost"
             size="icon"
-            className="text-secondary bg-accent border-accent hover:bg-accent hover:text-background
+            className="text-secondary  hover:text-background
             
         "
             onClick={() => setOpen(false)}
@@ -63,8 +63,8 @@ export default function CartModal({ open, setOpen }: CartModalProps) {
             <Cross1Icon />
           </Button>
 
-          <div className="pt-20 w-full space-y-4 pb-8 flex flex-col h-[calc(100vh-4rem)]">
-            <h1 className="font-display  text-2xl uppercase tracking-wide text-secondary">
+          <div className="pt-24 w-full space-y-4 pb-8 flex flex-col h-[calc(100vh-4rem)]">
+            <h1 className="font-mono  text-sm font-bold uppercase tracking-wide text-secondary">
               Shopping Cart ({itemCount} {itemCount === 1 ? "item" : "items"})
             </h1>
 
@@ -125,9 +125,9 @@ export default function CartModal({ open, setOpen }: CartModalProps) {
                         </div>
                         <Button
                           onClick={() => removeItem(item.id)}
-                          variant="secondary"
+                          variant="ghost"
                           size="icon"
-                          className="text-secondary bg-accent border-accent hover:bg-accent hover:text-background"
+                          className="text-secondary  hover:text-background"
                         >
                           <Cross1Icon />
                         </Button>
@@ -161,7 +161,7 @@ export default function CartModal({ open, setOpen }: CartModalProps) {
                   <Link href="/checkout" onClick={() => setOpen(false)}>
                     <Button
                       variant="secondary"
-                      className="w-full h-12"
+                      className="w-full h-12 font-mono text-sm font-bold"
                       size="default"
                     >
                       Proceed to Checkout

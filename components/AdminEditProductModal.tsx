@@ -17,6 +17,9 @@ export default function AdminEditProductModal({
   const [product, setProduct] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const closeModal = () => {
+    router.push("/admin");
+  };
 
   const router = useRouter();
 
@@ -79,7 +82,7 @@ export default function AdminEditProductModal({
         <ProductForm
           mode="edit"
           initialProduct={product || undefined}
-          toggleForm={() => router.back()}
+          closeModal={closeModal}
         />
       </div>
     </motion.div>

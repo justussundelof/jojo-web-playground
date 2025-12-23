@@ -6,8 +6,9 @@ import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import MenuOverlay from "./MenuOverlay";
+
 import { AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 const headerVariants: Variants = {
   hidden: {},
@@ -46,13 +47,17 @@ export default function FloatingNav({
   const { toggleSite, currentSite } = useSite();
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showNav, setShowNav] = useState(false);
-  const MIN_SCROLL = 150; // minimum scroll before nav can appear
+  const pathname = usePathname();
 
   useEffect(() => {
+    if (pathname === "/admin") {
+      return;
+    }
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      const MIN_SCROLL = 150;
 
-      // Only show nav if page is scrollable enough
       const canScroll =
         document.body.scrollHeight > window.innerHeight + MIN_SCROLL;
 
@@ -63,13 +68,10 @@ export default function FloatingNav({
       }
 
       if (currentScrollY < MIN_SCROLL) {
-        // At top → hide
         setShowNav(false);
       } else if (currentScrollY < lastScrollY) {
-        // Scrolling up → show
         setShowNav(true);
       } else {
-        // Scrolling down → hide
         setShowNav(false);
       }
 
@@ -78,7 +80,12 @@ export default function FloatingNav({
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, [lastScrollY, pathname]);
+
+  // ✅ CONDITIONAL RENDER GOES HERE
+  if (pathname === "/admin") {
+    return null;
+  }
 
   return (
     <>

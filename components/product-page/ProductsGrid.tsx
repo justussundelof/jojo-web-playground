@@ -74,7 +74,7 @@ export default function ProductsGrid({}: {}) {
   const inlinePanelRef = useRef<HTMLDivElement | null>(null);
   const { toggleItem } = useWishlist();
   const router = useRouter();
-  const { currentSite, setCurrentSite } = useSite();
+  const { currentSite, setCurrentSite, loading: siteLoading } = useSite();
   const [showTags, setShowTags] = useState(false);
 
   const [layoutIndex, setLayoutIndex] = useState<number>(2);
@@ -82,6 +82,7 @@ export default function ProductsGrid({}: {}) {
   const [showSort, setShowSort] = useState(false);
 
   const [modalProduct, setModalProduct] = useState<number | null>(null);
+  const isLoading = loading || siteLoading;
 
   const [showFilters, setShowFilters] = useState(true);
   const [showCategory, setShowCategory] = useState(false);
@@ -295,10 +296,6 @@ export default function ProductsGrid({}: {}) {
     router.push(`/products/${id}?${params.toString()}`);
   };
 
-  if (loading) {
-    return <LoaderJoJo loading={loading} />;
-  }
-
   // Error state
   if (error) {
     return (
@@ -323,13 +320,16 @@ export default function ProductsGrid({}: {}) {
   return (
     <>
       <LayoutGroup>
+        <div className="mt-32 sticky top-0 z-40  bg-background px-1">
+          <div className="h-1">
+            <LoaderJoJo loading={isLoading} />
+          </div>
+        </div>
         <div
           className={` ${
             currentSite === "sale" ? "bg-background" : "bg-background"
-          } relative w-full overflow-visible jojo-main-wrapper-top  `}
+          } relative w-full overflow-visible   `}
         >
-          <LoaderJoJo loading={loading} />
-
           <div className="sticky top-1 z-40   w-full py-1 bg-background px-1 space-y-1 ">
             <div className=" flex justify-between items-baseline   w-full   ">
               <div className=" flex justify-evenly w-full space-x-1">

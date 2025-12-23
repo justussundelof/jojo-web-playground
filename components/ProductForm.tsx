@@ -13,7 +13,6 @@ import type {
   Article,
   ProductMeasurements,
 } from "@/types/database";
-import ConfirmModal from "@/components/ConfirmModal";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -41,10 +40,7 @@ export default function ProductForm({
 }: ProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [orderedImageUrls, setOrderedImageUrls] = useState<string[]>([]);
@@ -451,7 +447,7 @@ export default function ProductForm({
           }
         }
 
-        router.push("/admin");
+        router.push(`/admin/products/${productId}`);
       }
 
       router.refresh();
@@ -465,8 +461,10 @@ export default function ProductForm({
   const handleDelete = async () => {
     if (!initialProduct) return;
 
-    setDeleteLoading(true);
-    setError(null);
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this product? This action cannot be undone."
+    );
+    if (!confirmed) return;
 
     try {
       const supabase = createClient();
@@ -485,15 +483,12 @@ export default function ProductForm({
 
       if (error) throw error;
 
-      // Close modal and refresh admin page
-      setShowDeleteModal(false);
+      // Refresh admin page and close modal
       closeModal();
-      router.push("/admin");
       router.refresh();
     } catch (err) {
       console.error("Failed to delete product:", err);
-      setDeleteLoading(false);
-      setError("Kunde inte radera produkten. Försök igen.");
+      alert("Failed to delete product. Please try again.");
     }
   };
 
@@ -715,28 +710,14 @@ export default function ProductForm({
               size="lg"
               variant="destructive"
               type="button"
-              onClick={() => setShowDeleteModal(true)}
+              onClick={handleDelete}
               className="w-full"
             >
-              Radera produkt
+              Delete Product
             </Button>
           )}
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {mode === "edit" && initialProduct && (
-        <ConfirmModal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleDelete}
-          title="Radera produkt?"
-          message={`Är du säker på att du vill radera "${initialProduct.title || 'denna produkt'}"? Detta kan inte ångras.`}
-          confirmText={deleteLoading ? "Raderar..." : "Radera"}
-          cancelText="Avbryt"
-          confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
-        />
-      )}
     </form>
   );
 }

@@ -96,7 +96,7 @@ export default function LogInButton({
         <PersonIcon />
       </Button>
       {dropdownOpen && (
-        <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border shadow-lg z-50">
+        <div className="absolute left-0 right-0 top-full mt-1 w-48 bg-background border border-secondary shadow-lg text-secondary font-extended z-50">
           {isAdmin ? (
             <button
               onClick={() => handleNavigation("/admin")}
@@ -118,11 +118,11 @@ export default function LogInButton({
           >
             Wishlist
           </button>
-          <div className="border-t border-border" />
+          <div className="border-t border-secondary" />
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="w-full text-left px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
+            className="w-full text-left px-4 py-2 text-sm hover:bg-accent disabled:opacity-50 font-extended"
           >
             {isLoggingOut ? "Logging out..." : "Log Out"}
           </button>

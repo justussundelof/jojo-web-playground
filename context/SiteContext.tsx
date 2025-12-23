@@ -4,9 +4,9 @@ import React, {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useCallback,
   ReactNode,
+  useState,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import LoaderJoJo from "@/components/LoaderJoJo";
@@ -28,11 +28,42 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
 
   const siteFromUrl = searchParams.get("site") as SiteType | null;
 
-  const currentSite: SiteType = useMemo(() => {
-    return siteFromUrl ?? "neutral";
-  }, [siteFromUrl]);
+  // ✅ LOCAL STATE is the source of truth
+  const [currentSite, setCurrentSiteState] = useState<SiteType>(
+    siteFromUrl ?? "neutral"
+  );
 
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [pendingSite, setPendingSite] = useState<SiteType | null>(null);
+
+  const toggleSite = () => {
+    const next = currentSite === "sale" ? "rent" : "sale";
+    setCurrentSiteState(next); // update UI immediately
+    setPendingSite(next); // queue URL update
+  };
+
+  // sync URL in background
+  useEffect(() => {
+    if (pendingSite && pendingSite !== siteFromUrl) {
+      const params = new URLSearchParams(searchParams.toString());
+      if (pendingSite === "neutral") params.delete("site");
+      else params.set("site", pendingSite);
+
+      router.replace(`?${params.toString()}`, { scroll: false });
+      setPendingSite(null);
+    }
+  }, [pendingSite, searchParams]);
+
+  // ✅ Sync FROM url (back/forward, external nav)
+  useEffect(() => {
+    if (siteFromUrl && siteFromUrl !== currentSite) {
+      setCurrentSiteState(siteFromUrl);
+    }
+    if (!siteFromUrl && currentSite !== "neutral") {
+      setCurrentSiteState("neutral");
+    }
+  }, [siteFromUrl]);
 
   const updateSiteInUrl = useCallback(
     (site: SiteType) => {
@@ -44,33 +75,37 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
         params.set("site", site);
       }
 
-      router.replace(`?${params.toString()}`, { scroll: false });
+      const next = params.toString();
+      const current = searchParams.toString();
+
+      if (next !== current) {
+        router.replace(`?${next}`, { scroll: false });
+      }
     },
     [router, searchParams]
   );
 
+  // ✅ UI FIRST, URL SECOND
   const setCurrentSite = (site: SiteType) => {
     setLoading(true);
-    updateSiteInUrl(site);
+    setCurrentSiteState(site);
+
+    requestAnimationFrame(() => {
+      updateSiteInUrl(site);
+    });
   };
 
-  const toggleSite = () => {
-    setLoading(true);
-    updateSiteInUrl(currentSite === "sale" ? "rent" : "sale");
-  };
-
+  // fake loading window for animation
   useEffect(() => {
-    if (loading) {
-      const t = setTimeout(() => setLoading(false), 400);
-      return () => clearTimeout(t);
-    }
+    if (!loading) return;
+    const t = setTimeout(() => setLoading(false), 400);
+    return () => clearTimeout(t);
   }, [loading]);
 
   return (
     <SiteContext.Provider
       value={{ currentSite, setCurrentSite, toggleSite, loading }}
     >
-      {loading && <LoaderJoJo loading />}
       {children}
     </SiteContext.Provider>
   );

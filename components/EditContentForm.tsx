@@ -71,7 +71,7 @@ export default function EditContentForm({ pageSlug }: EditContentFormProps) {
   if (!page) return <p>Page not found.</p>;
 
   return (
-    <form className="space-y-6 w-full" onSubmit={handleSave}>
+    <form className="space-y-6 w-full " onSubmit={handleSave}>
       <div className="w-full">
         <Label htmlFor="title">Title</Label>
         <Input

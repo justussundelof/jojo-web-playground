@@ -9,6 +9,7 @@ import ProductForm from "@/components/ProductForm";
 import { Button, type buttonVariants } from "./ui/button";
 import type { VariantProps } from "class-variance-authority";
 import { motion, type Variants } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface ProductGridProps {
   products: Product[];
@@ -55,7 +56,25 @@ function ToggleGridColsButton({
 
 export default function AdminProductGrid({ products }: ProductGridProps) {
   const [openForm, setOpenForm] = useState(false);
-  const toggleForm = () => setOpenForm(!openForm);
+  const closeModal = () => {
+    setOpenForm(false);
+  };
+  const [activeProduct, setActiveProduct] = useState<number | null>(null);
+  const [modalProduct, setModalProduct] = useState<number | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  function handleToggleActiveProduct(productId: number) {
+    setModalProduct(null);
+    setActiveProduct((prev) => (prev === productId ? null : productId));
+  }
+
+  const openModal = (id: number) => {
+    setActiveProduct(null);
+    setModalProduct(id);
+    const params = new URLSearchParams(searchParams.toString());
+    router.push(`/products/${id}?${params.toString()}`);
+  };
 
   const [layoutIndex, setLayoutIndex] = useState<number>(0);
   const [showText, setShowText] = useState(false);
@@ -67,8 +86,8 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
   ];
 
   return (
-    <div className="mt-10 relative w-full pl-1 pr-1  lg:pl-10 pt-1 pb-1 ">
-      {openForm && <ProductForm toggleForm={toggleForm} mode="create" />}
+    <div className=" relative w-full pl-1 pr-1  lg:pl-10  pb-1 ">
+      {openForm && <ProductForm closeModal={closeModal} mode="create" />}
 
       <motion.div
         key={`-${layoutIndex}`}
@@ -102,6 +121,11 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
                 <ProductCard
                   product={product}
                   showText={showText}
+                  activeProduct={activeProduct}
+                  handleToggleActiveProduct={(id) =>
+                    handleToggleActiveProduct(id as number)
+                  }
+                  openModal={openModal}
                   setShowText={setShowText}
                 />{" "}
               </Link>

@@ -2,13 +2,15 @@
 
 import { Button } from "./ui/button";
 import Link from "next/link";
-import { motion, type Variants } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   GearIcon,
   HomeIcon,
   PersonIcon,
   PlusIcon,
 } from "@radix-ui/react-icons";
+import { useState } from "react";
+import AdminDashboard from "./AdminDashboard";
 
 const sidebarVariants: Variants = {
   hidden: { opacity: 0, x: -100 },
@@ -38,33 +40,43 @@ const sidebarItemVariants: Variants = {
 };
 
 export default function AdminSidebar() {
+  const [openDashboard, setOpenDashboard] = useState(true);
   return (
-    <motion.header
-      initial="hidden"
-      animate="visible"
-      variants={sidebarVariants}
-      className="fixed bottom-0 lg:top-0 left-0 right-0 z-40  bg-secondary w-full lg:w-9 h-9 lg:h-screen"
-    >
-      <motion.div
-        variants={sidebarItemVariants}
-        className="relative pt-0 lg:pt-[20vh] grid grid-cols-3  lg:flex  items-center justify-between lg:flex-col  lg:justify-between lg:items-center w-full h-9 lg:h-full lg:pb-[10vh] "
+    <>
+      <motion.header
+        initial="hidden"
+        animate="visible"
+        variants={sidebarVariants}
+        className="fixed bottom-0 right-0 lg:top-0 left-auto lg:left-0 lg:right-auto  z-40  bg-transparent lg:bg-secondary w-full lg:w-9 h-24 lg:h-screen p-4 "
       >
-        <span>
-          <Button variant="secondary" size="icon" className="">
-            <PersonIcon />
-          </Button>
-        </span>
-        <span className="flex flex-row justify-center lg:flex-col lg:justify-center lg:items-end">
-          <Button variant="secondary" size="icon" className="">
-            <PlusIcon />
-          </Button>
-        </span>
-        <span className="flex flex-row justify-end lg:flex-col lg:justify-center lg:items-end">
-          <Button variant="secondary" size="icon" className="">
-            <GearIcon />
-          </Button>
-        </span>
-      </motion.div>
-    </motion.header>
+        <motion.div
+          variants={sidebarItemVariants}
+          className="bg-secondary lg:bg-transparent relative  lg:pt-[20vh] grid grid-cols-3  lg:flex  items-center justify-between lg:flex-col-reverse  lg:justify-between lg:items-center  w-sm lg:w-auto h-full  lg:pb-[10vh] p-4 lg:p-0 "
+        >
+          <span className="flex flex-row justify-center lg:flex-col lg:justify-center lg:items-end">
+            <Button variant="secondary" size="icon" className="">
+              <GearIcon />
+            </Button>
+          </span>
+          <span className="flex flex-row justify-center lg:flex-col lg:justify-center lg:items-end">
+            <Button variant="secondary" size="icon" className="">
+              <PersonIcon />
+            </Button>
+          </span>
+          <span className="flex flex-row justify-center lg:flex-col lg:justify-center lg:items-end">
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={() => setOpenDashboard(true)}
+              className=""
+            >
+              <PlusIcon />
+            </Button>
+          </span>
+        </motion.div>
+      </motion.header>
+
+      <AnimatePresence>{openDashboard && <AdminDashboard />}</AnimatePresence>
+    </>
   );
 }

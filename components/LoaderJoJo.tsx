@@ -19,9 +19,7 @@ export default function LoaderJoJo({ loading }: LoaderJoJoProps) {
         ease: "linear",
       });
 
-      return () => {
-        controls.stop();
-      };
+      return () => controls.stop();
     } else {
       animate(progress, 1, {
         duration: 0.25,
@@ -32,7 +30,7 @@ export default function LoaderJoJo({ loading }: LoaderJoJoProps) {
 
   return (
     <motion.div
-      className="mx-1   pointer-events-none sticky z-40 top-0 left-0  h-1 origin-left"
+      className="h-1 w-full origin-left"
       style={{
         scaleX: progress,
         backgroundColor: loading ? "var(--accent)" : "var(--secondary)",
