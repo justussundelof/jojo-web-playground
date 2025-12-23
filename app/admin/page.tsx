@@ -33,15 +33,14 @@ export default async function AdminPage() {
   const totalProducts = products?.length || 0;
   return (
     <div className="min-h-screen  bg-background">
-      {/* Header */}
-      <div className=" pl-3 pt-24 lg:pl-13 lg:pt-13 text-lg font-serif-display mb-3">
+      {/* {/* <div className=" pl-3 pt-24 lg:pl-13 lg:pt-13 text-lg font-serif-display mb-3">
         Admin Dashboard
       </div>
-      {/* Main Content */}
+
       <AdminDashboard />
       <div className=" pl-3 pt-6 lg:pl-13 lg:pt-13 text-lg font-serif-display mb-3">
         See all Products
-      </div>
+      </div> */}
       {!products || products.length === 0 ? null : (
         <AdminProductGrid products={products} />
       )}

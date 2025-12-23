@@ -67,7 +67,7 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
   ];
 
   return (
-    <div className="relative w-full pl-1 pr-1  lg:pl-10 pt-1 pb-1 ">
+    <div className="mt-10 relative w-full pl-1 pr-1  lg:pl-10 pt-1 pb-1 ">
       {openForm && <ProductForm toggleForm={toggleForm} mode="create" />}
 
       <motion.div
