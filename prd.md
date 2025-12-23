@@ -1474,13 +1474,352 @@ interface DressMeasurements {
 
 ---
 
-## 14. Document Control
+## 14. Product Admin Actions - View, Edit, Delete from Grid
+
+### 14.1 Overview
+
+This section outlines the requirements for implementing product management actions (view, edit, delete) accessible directly from the admin product grid. Currently, clicking a product in the admin grid opens a product form directly in edit mode, without providing a proper detail view or intuitive access to delete functionality.
+
+---
+
+### 14.2 Current State Analysis
+
+#### What Exists
+
+| Component | Location | Current Functionality |
+|-----------|----------|----------------------|
+| `AdminProductGrid` | `/components/AdminProductGrid.tsx` | Displays products in grid layout; links to `/admin/product/[id]` |
+| `ProductModalClient` | `/components/product-page/ProductModalClient.tsx` | Modal with "view" and "edit" modes; admin always opens in "edit" |
+| `ProductForm` | `/components/ProductForm.tsx` | Create/edit form with inline delete button (uses `window.confirm`) |
+| `ProductActions` | `/components/ProductActions.tsx` | Standalone edit/delete buttons with ConfirmModal (not integrated) |
+| `ConfirmModal` | `/components/ConfirmModal.tsx` | Reusable confirmation dialog |
+
+#### Current Issues
+
+1. **No Product Detail View in Admin**
+   - Clicking a product in admin grid immediately opens the edit form
+   - No way to quickly view product details without entering edit mode
+   - Missing quick-glance information (stock status, sale/rent, images, measurements)
+
+2. **Poor Delete UX**
+   - Delete uses `window.confirm()` - looks unprofessional and inconsistent with app design
+   - Delete button is buried at the bottom of the edit form
+   - No visual indication of which product is being deleted
+
+3. **Missing Quick Actions**
+   - No way to quickly toggle stock status from the grid
+   - No hover actions or context menu for quick operations
+   - Must open full form to make any changes
+
+4. **Unused Component**
+   - `ProductActions` component exists but is not used in the admin flow
+   - Routes to non-existent `/admin/products/${productId}/edit` path
+
+---
+
+### 14.3 Proposed Solution
+
+#### User Flow
+
+```
+Admin Grid
+    │
+    ├── Click Product Card → Open Product Detail Modal (NEW)
+    │       │
+    │       ├── [View] Button → Already viewing details
+    │       ├── [Edit] Button → Switch to ProductForm (existing)
+    │       └── [Delete] Button → Open ConfirmModal → Delete & Refresh
+    │
+    └── Hover Product Card → Show Quick Action Icons (OPTIONAL)
+            ├── Edit Icon → Open ProductForm directly
+            └── Delete Icon → Open ConfirmModal
+```
+
+---
+
+### 14.4 Feature Breakdown
+
+#### 14.4.1 Product Detail Modal for Admin (Priority: High)
+
+**Description:** A new view mode within the admin modal that displays comprehensive product information before allowing edit actions.
+
+**Requirements:**
+- Display product image gallery (support multiple images from `product_images` table)
+- Show all product details in a clean, scannable format:
+  - Title, Description, Price (formatted as SEK)
+  - Category (with parent gender category)
+  - Tag, Size
+  - Stock status (visual badge: In Stock / Out of Stock)
+  - Sale type (For Sale / For Rent)
+  - Measurements (if available, formatted by category type)
+  - Created date
+- Action buttons prominently displayed:
+  - **Edit Product** - Opens ProductForm in edit mode
+  - **Delete Product** - Opens confirmation modal
+- Back/Close button to return to grid
+
+**UI Specifications:**
+- Full-screen modal (consistent with existing `ProductModalClient`)
+- Two-column layout on desktop: Images left, Details right
+- Single column on mobile with stacked sections
+- Sticky header with product title and close button
+
+**UI Mockup:**
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ [←] Product Detail                                            [X]  │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  ┌─────────────────────┐  ┌─────────────────────────────────────┐  │
+│  │                     │  │ VINTAGE LEVI'S JACKET               │  │
+│  │   [PRIMARY IMAGE]   │  │                                     │  │
+│  │                     │  │ 450 kr                              │  │
+│  │                     │  │                                     │  │
+│  │                     │  │ ─── STATUS ───                      │  │
+│  └─────────────────────┘  │ [●] In Stock    [SALE]              │  │
+│                           │                                     │  │
+│  ┌───┐ ┌───┐ ┌───┐ ┌───┐  │ ─── DETAILS ───                     │  │
+│  │ 1 │ │ 2 │ │ 3 │ │ 4 │  │ Category: Female > Jacka            │  │
+│  └───┘ └───┘ └───┘ └───┘  │ Size: M                              │  │
+│                           │ Tag: Vintage                        │  │
+│                           │ Created: 2025-12-10                  │  │
+│                           │                                     │  │
+│                           │ ─── DESCRIPTION ───                 │  │
+│                           │ Classic denim jacket in excellent   │  │
+│                           │ condition. True vintage piece.      │  │
+│                           │                                     │  │
+│                           │ ─── MEASUREMENTS ───                │  │
+│                           │ Axel till axel: 42 cm               │  │
+│                           │ Bröstbredd: 52 cm                   │  │
+│                           │ Ärmlängd: 64 cm                     │  │
+│                           │ Plagglängd: 68 cm                   │  │
+│                           │                                     │  │
+│                           │ ┌──────────────┐ ┌────────────────┐ │  │
+│                           │ │ EDIT PRODUCT │ │ DELETE PRODUCT │ │  │
+│                           │ └──────────────┘ └────────────────┘ │  │
+│                           └─────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+#### 14.4.2 Delete Confirmation Modal (Priority: High)
+
+**Description:** Replace `window.confirm()` with styled `ConfirmModal` component.
+
+**Requirements:**
+- Use existing `ConfirmModal` component
+- Show product name and thumbnail in confirmation dialog
+- Swedish language for consistency ("Radera produkt?")
+- Clear warning about permanent deletion
+- Loading state during deletion
+- Success feedback (toast or redirect with message)
+- Error handling with user-friendly message
+
+**Proposed Implementation:**
+```typescript
+// In ProductDetailView or ProductForm
+<ConfirmModal
+  isOpen={showDeleteModal}
+  onClose={() => setShowDeleteModal(false)}
+  onConfirm={handleDelete}
+  title="Radera produkt?"
+  message={`Är du säker på att du vill radera "${product.title}"? Detta kan inte ångras.`}
+  confirmText="Radera"
+  cancelText="Avbryt"
+  confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+/>
+```
+
+**UI Mockup:**
+
+```
+┌────────────────────────────────────────┐
+│  Radera produkt?                  [X]  │
+├────────────────────────────────────────┤
+│                                        │
+│  ┌─────┐                               │
+│  │ IMG │  Vintage Levi's Jacket        │
+│  └─────┘  450 kr                       │
+│                                        │
+│  Är du säker på att du vill radera    │
+│  denna produkt? Detta kan inte ångras. │
+│                                        │
+│             [AVBRYT]  [RADERA]         │
+│                        (red)           │
+└────────────────────────────────────────┘
+```
+
+---
+
+#### 14.4.3 Quick Actions on Product Cards (Priority: Medium)
+
+**Description:** Add hover-reveal action buttons on product cards in the admin grid.
+
+**Requirements:**
+- Show action icons on card hover (View, Edit, Delete)
+- View icon: Opens detail modal (default behavior)
+- Edit icon: Opens edit form directly
+- Delete icon: Opens confirmation modal
+- Optional: Toggle stock status icon
+- Icons should have tooltips
+- Semi-transparent overlay on hover for better icon visibility
+
+**UI Specifications:**
+- Position: Top-right corner of card, absolute positioning
+- Icons: Use Radix icons for consistency (EyeOpenIcon, Pencil1Icon, TrashIcon)
+- Background: Semi-transparent dark overlay
+- Size: 32x32px touch targets
+- Show on hover (desktop) or always visible (mobile)
+
+**UI Mockup:**
+
+```
+┌──────────────────────────┐
+│ ┌──────────────────────┐ │
+│ │                      │ │
+│ │    [PRODUCT IMAGE]   │ │ ← On hover:
+│ │                      │ │   ┌───┬───┬───┐
+│ │                      │ │   │ 👁 │ ✏️ │ 🗑 │
+│ │                      │ │   └───┴───┴───┘
+│ └──────────────────────┘ │
+│ Product Title            │
+│ 299 kr                   │
+└──────────────────────────┘
+```
+
+---
+
+#### 14.4.4 Updated Routing Structure (Priority: Medium)
+
+**Current routing is inconsistent. Proposed clean structure:**
+
+| Route | Purpose |
+|-------|---------|
+| `/admin` | Admin dashboard with product grid |
+| `/admin/product/[id]` | Product detail modal (NEW - view mode first) |
+| `/admin/product/[id]/edit` | Direct edit modal (optional deep link) |
+| `/admin/product/new` | Create new product modal |
+
+**Implementation:**
+- Update `ProductModalClient` default mode based on route
+- Intercept route `/admin/product/[id]` for view mode
+- Add route `/admin/product/[id]/edit` for direct edit access
+
+---
+
+### 14.5 Technical Specifications
+
+#### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `components/admin/ProductDetailView.tsx` | New admin product detail view component |
+
+#### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `components/product-page/ProductModalClient.tsx` | Add admin detail view mode, integrate ConfirmModal for delete |
+| `components/AdminProductGrid.tsx` | Add quick action buttons on hover |
+| `components/ProductForm.tsx` | Replace `window.confirm` with ConfirmModal, improve delete UX |
+| `app/admin/@modal/(.)product/[id]/page.tsx` | Default to "view" mode for admin |
+
+#### Files to Remove/Deprecate
+
+| File | Reason |
+|------|--------|
+| `components/ProductActions.tsx` | Integrate functionality into ProductDetailView instead |
+
+#### Data Requirements
+
+No database changes required. All necessary data is available:
+- Product data from `article` table
+- Images from `product_images` table (already fetched with products)
+- Related data (category, tag, size) via foreign key joins
+
+---
+
+### 14.6 Acceptance Criteria
+
+#### Product Detail View
+- [ ] Clicking a product in admin grid opens detail modal (not edit form)
+- [ ] All product information is displayed correctly
+- [ ] Image gallery works with multiple images
+- [ ] Edit button opens ProductForm in edit mode
+- [ ] Delete button opens confirmation modal
+- [ ] Close button returns to admin grid
+- [ ] Keyboard navigation works (Escape to close)
+
+#### Delete Functionality
+- [ ] Delete shows styled confirmation modal (not browser dialog)
+- [ ] Confirmation modal shows product name
+- [ ] Deleting product removes it from database
+- [ ] Associated product images are deleted
+- [ ] Grid refreshes after successful deletion
+- [ ] Error state is handled gracefully
+
+#### Quick Actions (if implemented)
+- [ ] Action icons appear on product card hover
+- [ ] Edit icon opens edit form
+- [ ] Delete icon opens confirmation modal
+- [ ] Actions work on touch devices (long press or always visible)
+
+#### General
+- [ ] All modals are accessible (keyboard navigation, focus trap)
+- [ ] Loading states are shown during async operations
+- [ ] Responsive design works on mobile and desktop
+- [ ] Consistent with existing design language
+
+---
+
+### 14.7 Out of Scope
+
+- Bulk delete functionality
+- Product duplication
+- Version history / undo delete
+- Advanced image management (crop, filters)
+- Product search/filter in admin grid
+
+---
+
+### 14.8 Implementation Order
+
+1. **Phase 1: Core Functionality**
+   - Create ProductDetailView component
+   - Update modal routing to default to view mode
+   - Integrate ConfirmModal for delete
+
+2. **Phase 2: Enhanced UX**
+   - Add quick actions on product cards
+   - Add loading and success states
+   - Improve error handling
+
+3. **Phase 3: Polish**
+   - Add animations and transitions
+   - Optimize image loading
+   - Accessibility audit
+
+---
+
+### 14.9 Success Metrics
+
+- Admin can view product details without entering edit mode
+- Delete action uses consistent styled modal
+- Time to delete a product is reduced (fewer clicks)
+- No regression in existing create/edit functionality
+
+---
+
+## 15. Document Control
 
 **Version History:**
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-12-10 | Product Team | Initial PRD |
+| 1.1 | 2025-12-23 | Product Team | Added Section 14: Product Admin Actions (View/Edit/Delete) |
 
 **Approval:**
 
