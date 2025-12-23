@@ -17,6 +17,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 import { useEffect, useState } from "react";
 import ProductForm from "@/components/ProductForm";
+import { createClient } from "@/utils/supabase/client";
 
 interface ProductModalProps {
   id: string;
@@ -43,6 +44,7 @@ export default function ProductModalClient({
 
   const [addedToCart, setAddedToCart] = useState(false);
   const [selectedImage, setSelectedImage] = useState(product?.img_url || "");
+  const [images, setImages] = useState<string[]>([]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && router.back();
@@ -50,9 +52,33 @@ export default function ProductModalClient({
     return () => window.removeEventListener("keydown", onKey);
   }, [router]);
 
-  if (!product) return <div className="fixed inset-0 z-40 bg-background/50" />;
+  // Fetch product images from product_images table
+  useEffect(() => {
+    const fetchImages = async () => {
+      const supabase = createClient();
+      const { data: imageData } = await supabase
+        .from("product_images")
+        .select("image_url")
+        .eq("article_id", productId)
+        .order("display_order");
 
-  const images = Array(4).fill(product.img_url); // repeat main image 4x
+      if (imageData && imageData.length > 0) {
+        const urls = imageData.map((img) => img.image_url);
+        setImages(urls);
+        setSelectedImage(urls[0]);
+      } else if (product?.img_url) {
+        // Fallback to single main image
+        setImages([product.img_url]);
+        setSelectedImage(product.img_url);
+      }
+    };
+
+    if (productId) {
+      fetchImages();
+    }
+  }, [productId, product?.img_url]);
+
+  if (!product) return <div className="fixed inset-0 z-40 bg-background/50" />;
 
   const toggleWishlist = () => {
     if (!product) return;
@@ -144,19 +170,18 @@ export default function ProductModalClient({
                   {product.title}
                 </h1>
 
-                <p className="text-sm leading-snug text-secondary pb-4 font-extended font-light  max-w-sm">
-                  Cropped, loose fitting, parka featuring seven pockets and
-                  multi-function hood design. OTTO 958 rubber injected velcro
-                  patch for multiple placement options. Iridescent "O" motif in
-                  custom eight point pattern on back side. Custom overspray
-                  "netting" motif on various locations. Made from 100% Bawełna
-                  Cotton Ripstop.
-                </p>
+                {product.description && (
+                  <p className="text-sm leading-snug text-secondary pb-4 font-extended font-light max-w-sm">
+                    {product.description}
+                  </p>
+                )}
                 <div className="flex flex-col items-start justify-start text-xs py-2 border-t border-t-secondary border-b border-b-secondary w-full mb-4">
-                  <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
-                    Brand/Designer:{" "}
-                    <strong className="font-normal">{product.designer}</strong>
-                  </span>
+                  {product.designer && (
+                    <span className="flex justify-start items-baseline gap-x-2 font-mono font-bold text-secondary uppercase w-full">
+                      Brand/Designer:{" "}
+                      <strong className="font-normal">{product.designer}</strong>
+                    </span>
+                  )}
                   <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
                     Size:{" "}
                     <strong className="font-normal">
@@ -204,19 +229,18 @@ export default function ProductModalClient({
                   {product.title}
                 </h1>
 
-                <p className="text-sm leading-snug text-secondary pb-4 font-extended font-light  max-w-sm">
-                  Cropped, loose fitting, parka featuring seven pockets and
-                  multi-function hood design. OTTO 958 rubber injected velcro
-                  patch for multiple placement options. Iridescent "O" motif in
-                  custom eight point pattern on back side. Custom overspray
-                  "netting" motif on various locations. Made from 100% Bawełna
-                  Cotton Ripstop.
-                </p>
+                {product.description && (
+                  <p className="text-sm leading-snug text-secondary pb-4 font-extended font-light max-w-sm">
+                    {product.description}
+                  </p>
+                )}
                 <div className="flex flex-col items-start justify-start text-xs py-1 border-t border-t-secondary border-b border-b-secondary w-full mb-4">
-                  <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
-                    Brand/Designer:{" "}
-                    <strong className="font-normal">{product.designer}</strong>
-                  </span>
+                  {product.designer && (
+                    <span className="flex justify-start items-baseline gap-x-2 font-mono font-bold text-secondary uppercase w-full">
+                      Brand/Designer:{" "}
+                      <strong className="font-normal">{product.designer}</strong>
+                    </span>
+                  )}
                   <span className="flex justify-start items-baseline gap-x-2  font-mono font-bold text-secondary uppercase w-full">
                     Size:{" "}
                     <strong className="font-normal">

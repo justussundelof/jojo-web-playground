@@ -447,7 +447,7 @@ export default function ProductForm({
           }
         }
 
-        router.push(`/admin/products/${productId}`);
+        router.push(`/admin/product/${productId}`);
       }
 
       router.refresh();

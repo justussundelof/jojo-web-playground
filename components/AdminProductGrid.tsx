@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { optimizeCloudinaryImage } from "@/utils/cloudinary";
 import type { Product } from "@/types/product";
 import ProductCard from "./product-page/ProductCard";
@@ -114,21 +113,17 @@ export default function AdminProductGrid({ products }: ProductGridProps) {
               key={product.id}
               variants={cardVariants}
             >
-              <Link
-                href={`/admin/product/${product.id}`}
-                className="group cursor-pointer"
-              >
-                <ProductCard
-                  product={product}
-                  showText={showText}
-                  activeProduct={activeProduct}
-                  handleToggleActiveProduct={(id) =>
-                    handleToggleActiveProduct(id as number)
-                  }
-                  openModal={openModal}
-                  setShowText={setShowText}
-                />{" "}
-              </Link>
+              <ProductCard
+                product={product}
+                showText={showText}
+                activeProduct={activeProduct}
+                handleToggleActiveProduct={(id) =>
+                  handleToggleActiveProduct(id as number)
+                }
+                openModal={openModal}
+                setShowText={setShowText}
+                basePath="/admin/product"
+              />
             </motion.div>
           );
         })}
