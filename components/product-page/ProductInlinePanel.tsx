@@ -99,8 +99,10 @@ const ProductInlinePanel = forwardRef<HTMLDivElement, ProductInlinePanelProps>(
               className="object-cover object-top"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center opacity-40">
-              NO IMAGE
+            <div className="flex h-full w-full items-center justify-center bg-secondary/10">
+              <span className="text-xs font-mono uppercase text-secondary/40 tracking-wider">
+                No Image
+              </span>
             </div>
           )}
 

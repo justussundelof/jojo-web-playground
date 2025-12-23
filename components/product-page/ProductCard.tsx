@@ -23,13 +23,14 @@ interface ProductCardProps {
   handleToggleActiveProduct: (productId: number | null) => void;
   activeProduct: number | null;
   openModal: (productId: number) => void;
+  basePath?: string;
 }
 
 export default function ProductCard({
   product,
   showText,
-
   handleToggleActiveProduct,
+  basePath = "/product",
 }: ProductCardProps) {
   const productId = product.id ?? 0;
 
@@ -47,7 +48,7 @@ export default function ProductCard({
 
   const openModal = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/product/${productId}`);
+    router.push(`${basePath}/${productId}`);
   };
 
   const isOutOfStock = !product.in_stock;
@@ -84,15 +85,17 @@ export default function ProductCard({
                 className="object-cover object-top"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center opacity-40">
-                NO IMAGE
+              <div className="flex h-full w-full items-center justify-center bg-secondary/10">
+                <span className="text-xs font-mono uppercase text-secondary/40 tracking-wider">
+                  No Image
+                </span>
               </div>
             )}
 
             <Button
               variant="secondary"
               size="icon"
-              className="absolute top-0 left-0 z-20 aspect-square h-p  "
+              className="absolute top-0 left-0 z-20 aspect-square h-8"
               onClick={(e) => {
                 e.stopPropagation();
                 handleToggleActiveProduct(productId);
@@ -131,7 +134,7 @@ export default function ProductCard({
                 )}
               </Button>
             </span>
-            <span className="flex justify-between items-baseline w-ful pr-">
+            <span className="flex justify-between items-baseline w-full pr-1">
               <p className="text-xs font-mono uppercase text-secondary">
                 {product.price} SEK
               </p>

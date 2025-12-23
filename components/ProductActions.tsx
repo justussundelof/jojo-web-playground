@@ -36,8 +36,8 @@ export default function ProductActions({ productId, imageUrl }: ProductActionsPr
       // For now, we'll leave the image in Cloudinary
       // A cleanup job can be run later to remove orphaned images
 
-      // Redirect to products list
-      router.push('/admin/products')
+      // Redirect to admin page
+      router.push('/admin')
       router.refresh()
     } catch (error) {
       console.error('Delete error:', error)
@@ -51,7 +51,7 @@ export default function ProductActions({ productId, imageUrl }: ProductActionsPr
       {/* Action Buttons */}
       <div className="border-t border-black pt-6 flex gap-4">
         <Link
-          href={`/admin/products/${productId}/edit`}
+          href={`/admin/product/${productId}`}
           className="px-6 py-3 border border-black hover:bg-black hover:text-white transition-colors"
         >
           Edit Product
