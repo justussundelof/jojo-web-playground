@@ -1524,81 +1524,87 @@ This section outlines the requirements for implementing product management actio
 ```
 Admin Grid
     │
-    ├── Click Product Card → Open Product Detail Modal (NEW)
-    │       │
-    │       ├── [View] Button → Already viewing details
-    │       ├── [Edit] Button → Switch to ProductForm (existing)
-    │       └── [Delete] Button → Open ConfirmModal → Delete & Refresh
-    │
-    └── Hover Product Card → Show Quick Action Icons (OPTIONAL)
-            ├── Edit Icon → Open ProductForm directly
-            └── Delete Icon → Open ConfirmModal
+    └── Click Product Card → Open Product Detail/Edit Page
+            │
+            ├── All fields are immediately editable
+            ├── [SAVE / UPDATE] Button → Save changes & refresh
+            └── [DELETE] Button → Open ConfirmModal → Delete & redirect to grid
 ```
+
+**Key Principle:** Single page that shows product details AND allows editing. No extra clicks to enter "edit mode".
 
 ---
 
 ### 14.4 Feature Breakdown
 
-#### 14.4.1 Product Detail Modal for Admin (Priority: High)
+#### 14.4.1 Product Detail/Edit Page for Admin (Priority: High)
 
-**Description:** A new view mode within the admin modal that displays comprehensive product information before allowing edit actions.
+**Description:** A single page that displays product information in editable form fields. User can immediately edit any field and save changes.
 
 **Requirements:**
-- Display product image gallery (support multiple images from `product_images` table)
-- Show all product details in a clean, scannable format:
-  - Title, Description, Price (formatted as SEK)
-  - Category (with parent gender category)
-  - Tag, Size
-  - Stock status (visual badge: In Stock / Out of Stock)
-  - Sale type (For Sale / For Rent)
-  - Measurements (if available, formatted by category type)
-  - Created date
+- Display product images with ability to add/remove/reorder (reuse existing `ImageUploadMultiple`)
+- All product fields are editable form inputs (not read-only display):
+  - Title (text input)
+  - Description (textarea)
+  - Price in SEK (number input)
+  - Gender → Category (hierarchical dropdowns)
+  - Tag (dropdown with create option)
+  - Size (dropdown)
+  - Stock status (checkbox: In Stock)
+  - Sale type (radio: For Sale / For Rent)
+  - Measurements (dynamic fields based on category)
 - Action buttons prominently displayed:
-  - **Edit Product** - Opens ProductForm in edit mode
-  - **Delete Product** - Opens confirmation modal
+  - **Save / Update** - Saves changes and shows success feedback
+  - **Delete** - Opens confirmation modal
 - Back/Close button to return to grid
+- Show "unsaved changes" warning if navigating away with edits
 
 **UI Specifications:**
 - Full-screen modal (consistent with existing `ProductModalClient`)
-- Two-column layout on desktop: Images left, Details right
+- Two-column layout on desktop: Images left, Form fields right
 - Single column on mobile with stacked sections
-- Sticky header with product title and close button
+- Sticky header with close button
+- Sticky footer with Save and Delete buttons
 
 **UI Mockup:**
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│ [←] Product Detail                                            [X]  │
+│ [←] Back to Products                                          [X]  │
 ├────────────────────────────────────────────────────────────────────┤
 │                                                                    │
 │  ┌─────────────────────┐  ┌─────────────────────────────────────┐  │
-│  │                     │  │ VINTAGE LEVI'S JACKET               │  │
-│  │   [PRIMARY IMAGE]   │  │                                     │  │
-│  │                     │  │ 450 kr                              │  │
-│  │                     │  │                                     │  │
-│  │                     │  │ ─── STATUS ───                      │  │
-│  └─────────────────────┘  │ [●] In Stock    [SALE]              │  │
+│  │                     │  │ TITLE                               │  │
+│  │   [IMAGE UPLOAD]    │  │ [Vintage Levi's Jacket___________]  │  │
+│  │   + Add more        │  │                                     │  │
+│  │                     │  │ DESCRIPTION                         │  │
+│  │  ┌───┐ ┌───┐ ┌───┐  │  │ [Classic denim jacket in excellent │  │
+│  │  │ 1 │ │ 2 │ │ 3 │  │  │  condition. True vintage piece.___]│  │
+│  │  └───┘ └───┘ └───┘  │  │                                     │  │
+│  │  (drag to reorder)  │  │ PRICE (SEK)                         │  │
+│  │                     │  │ [450_______] kr                     │  │
+│  └─────────────────────┘  │                                     │  │
+│                           │ GENDER          CATEGORY            │  │
+│                           │ [Female ▼]     [Jacka ▼]           │  │
 │                           │                                     │  │
-│  ┌───┐ ┌───┐ ┌───┐ ┌───┐  │ ─── DETAILS ───                     │  │
-│  │ 1 │ │ 2 │ │ 3 │ │ 4 │  │ Category: Female > Jacka            │  │
-│  └───┘ └───┘ └───┘ └───┘  │ Size: M                              │  │
-│                           │ Tag: Vintage                        │  │
-│                           │ Created: 2025-12-10                  │  │
+│                           │ SIZE            TAG                 │  │
+│                           │ [M ▼]          [Vintage ▼]         │  │
 │                           │                                     │  │
-│                           │ ─── DESCRIPTION ───                 │  │
-│                           │ Classic denim jacket in excellent   │  │
-│                           │ condition. True vintage piece.      │  │
+│                           │ ○ Till salu (For Sale)              │  │
+│                           │ ○ Uthyrning (For Rent)              │  │
+│                           │                                     │  │
+│                           │ [✓] I lager (In Stock)              │  │
 │                           │                                     │  │
 │                           │ ─── MEASUREMENTS ───                │  │
-│                           │ Axel till axel: 42 cm               │  │
-│                           │ Bröstbredd: 52 cm                   │  │
-│                           │ Ärmlängd: 64 cm                     │  │
-│                           │ Plagglängd: 68 cm                   │  │
+│                           │ Axel till axel: [42__] cm           │  │
+│                           │ Bröstbredd:     [52__] cm           │  │
+│                           │ Ärmlängd:       [64__] cm           │  │
+│                           │ Plagglängd:     [68__] cm           │  │
 │                           │                                     │  │
-│                           │ ┌──────────────┐ ┌────────────────┐ │  │
-│                           │ │ EDIT PRODUCT │ │ DELETE PRODUCT │ │  │
-│                           │ └──────────────┘ └────────────────┘ │  │
 │                           └─────────────────────────────────────┘  │
+├────────────────────────────────────────────────────────────────────┤
+│                        [DELETE]              [SAVE CHANGES]        │
+│                         (red)                   (primary)          │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1653,22 +1659,20 @@ Admin Grid
 
 ---
 
-#### 14.4.3 Quick Actions on Product Cards (Priority: Medium)
+#### 14.4.3 Quick Actions on Product Cards (Priority: Low - Optional)
 
-**Description:** Add hover-reveal action buttons on product cards in the admin grid.
+**Description:** Add hover-reveal action buttons on product cards in the admin grid for quick access.
 
 **Requirements:**
-- Show action icons on card hover (View, Edit, Delete)
-- View icon: Opens detail modal (default behavior)
-- Edit icon: Opens edit form directly
-- Delete icon: Opens confirmation modal
-- Optional: Toggle stock status icon
+- Show action icons on card hover (Edit, Delete)
+- Edit icon: Opens product detail/edit page (same as clicking card)
+- Delete icon: Opens confirmation modal directly (skip opening page)
 - Icons should have tooltips
 - Semi-transparent overlay on hover for better icon visibility
 
 **UI Specifications:**
 - Position: Top-right corner of card, absolute positioning
-- Icons: Use Radix icons for consistency (EyeOpenIcon, Pencil1Icon, TrashIcon)
+- Icons: Use Radix icons for consistency (Pencil1Icon, TrashIcon)
 - Background: Semi-transparent dark overlay
 - Size: 32x32px touch targets
 - Show on hover (desktop) or always visible (mobile)
@@ -1680,9 +1684,9 @@ Admin Grid
 │ ┌──────────────────────┐ │
 │ │                      │ │
 │ │    [PRODUCT IMAGE]   │ │ ← On hover:
-│ │                      │ │   ┌───┬───┬───┐
-│ │                      │ │   │ 👁 │ ✏️ │ 🗑 │
-│ │                      │ │   └───┴───┴───┘
+│ │                      │ │   ┌───┬───┐
+│ │                      │ │   │ ✏️ │ 🗑 │
+│ │                      │ │   └───┴───┘
 │ └──────────────────────┘ │
 │ Product Title            │
 │ 299 kr                   │
@@ -1698,14 +1702,13 @@ Admin Grid
 | Route | Purpose |
 |-------|---------|
 | `/admin` | Admin dashboard with product grid |
-| `/admin/product/[id]` | Product detail modal (NEW - view mode first) |
-| `/admin/product/[id]/edit` | Direct edit modal (optional deep link) |
-| `/admin/product/new` | Create new product modal |
+| `/admin/product/[id]` | Product detail/edit page (editable immediately) |
+| `/admin/product/new` | Create new product page |
 
 **Implementation:**
-- Update `ProductModalClient` default mode based on route
-- Intercept route `/admin/product/[id]` for view mode
-- Add route `/admin/product/[id]/edit` for direct edit access
+- Update `ProductModalClient` to always show editable form for admin
+- Reuse existing `ProductForm` component (already supports edit mode)
+- Remove separate "view" vs "edit" mode distinction for admin
 
 ---
 
@@ -1713,24 +1716,22 @@ Admin Grid
 
 #### Files to Create
 
-| File | Purpose |
-|------|---------|
-| `components/admin/ProductDetailView.tsx` | New admin product detail view component |
+None required - reuse existing `ProductForm` component.
 
 #### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `components/product-page/ProductModalClient.tsx` | Add admin detail view mode, integrate ConfirmModal for delete |
-| `components/AdminProductGrid.tsx` | Add quick action buttons on hover |
-| `components/ProductForm.tsx` | Replace `window.confirm` with ConfirmModal, improve delete UX |
-| `app/admin/@modal/(.)product/[id]/page.tsx` | Default to "view" mode for admin |
+| `components/ProductForm.tsx` | Replace `window.confirm` with `ConfirmModal`, add sticky footer with Save/Delete buttons, improve layout |
+| `components/product-page/ProductModalClient.tsx` | Simplify to always use ProductForm for admin (remove view/edit mode logic) |
+| `components/AdminProductGrid.tsx` | (Optional) Add quick action buttons on hover |
+| `app/admin/@modal/(.)product/[id]/page.tsx` | Pass correct props to show editable form |
 
 #### Files to Remove/Deprecate
 
 | File | Reason |
 |------|--------|
-| `components/ProductActions.tsx` | Integrate functionality into ProductDetailView instead |
+| `components/ProductActions.tsx` | Functionality integrated into ProductForm instead |
 
 #### Data Requirements
 
@@ -1743,34 +1744,37 @@ No database changes required. All necessary data is available:
 
 ### 14.6 Acceptance Criteria
 
-#### Product Detail View
-- [ ] Clicking a product in admin grid opens detail modal (not edit form)
-- [ ] All product information is displayed correctly
-- [ ] Image gallery works with multiple images
-- [ ] Edit button opens ProductForm in edit mode
-- [ ] Delete button opens confirmation modal
-- [ ] Close button returns to admin grid
+#### Product Detail/Edit Page
+- [ ] Clicking a product in admin grid opens editable detail page
+- [ ] All product fields are immediately editable (no "edit mode" button needed)
+- [ ] Image management works (add, remove, reorder images)
+- [ ] All form fields pre-populated with current product data
+- [ ] Save/Update button saves changes to database
+- [ ] Success feedback shown after saving
+- [ ] Close/Back button returns to admin grid
 - [ ] Keyboard navigation works (Escape to close)
+- [ ] Unsaved changes warning when navigating away
 
 #### Delete Functionality
-- [ ] Delete shows styled confirmation modal (not browser dialog)
-- [ ] Confirmation modal shows product name
+- [ ] Delete button shows styled confirmation modal (not browser dialog)
+- [ ] Confirmation modal shows product name and thumbnail
 - [ ] Deleting product removes it from database
-- [ ] Associated product images are deleted
-- [ ] Grid refreshes after successful deletion
-- [ ] Error state is handled gracefully
+- [ ] Associated product images are deleted from database
+- [ ] Redirects to admin grid after successful deletion
+- [ ] Error state is handled gracefully with user-friendly message
 
-#### Quick Actions (if implemented)
+#### Quick Actions (optional)
 - [ ] Action icons appear on product card hover
-- [ ] Edit icon opens edit form
-- [ ] Delete icon opens confirmation modal
-- [ ] Actions work on touch devices (long press or always visible)
+- [ ] Edit icon opens product detail/edit page
+- [ ] Delete icon opens confirmation modal directly
+- [ ] Actions work on touch devices
 
 #### General
 - [ ] All modals are accessible (keyboard navigation, focus trap)
-- [ ] Loading states are shown during async operations
+- [ ] Loading states are shown during async operations (save, delete)
 - [ ] Responsive design works on mobile and desktop
 - [ ] Consistent with existing design language
+- [ ] Form validation shows clear error messages
 
 ---
 
@@ -1787,27 +1791,28 @@ No database changes required. All necessary data is available:
 ### 14.8 Implementation Order
 
 1. **Phase 1: Core Functionality**
-   - Create ProductDetailView component
-   - Update modal routing to default to view mode
-   - Integrate ConfirmModal for delete
+   - Update `ProductForm` to use `ConfirmModal` for delete (replace `window.confirm`)
+   - Add sticky footer with Save and Delete buttons
+   - Ensure admin modal opens ProductForm directly (already mostly works)
 
 2. **Phase 2: Enhanced UX**
-   - Add quick actions on product cards
-   - Add loading and success states
-   - Improve error handling
+   - Add loading states for save and delete operations
+   - Add success feedback (toast or inline message)
+   - Add unsaved changes warning
+   - Improve error handling with user-friendly messages
 
-3. **Phase 3: Polish**
+3. **Phase 3: Polish (Optional)**
+   - Add quick action buttons on product cards in grid
    - Add animations and transitions
-   - Optimize image loading
    - Accessibility audit
 
 ---
 
 ### 14.9 Success Metrics
 
-- Admin can view product details without entering edit mode
-- Delete action uses consistent styled modal
-- Time to delete a product is reduced (fewer clicks)
+- Admin can edit product fields immediately upon opening (no extra click to enter edit mode)
+- Delete action uses consistent styled modal with product preview
+- Save operation provides clear success feedback
 - No regression in existing create/edit functionality
 
 ---
@@ -1820,6 +1825,7 @@ No database changes required. All necessary data is available:
 |---------|------|--------|---------|
 | 1.0 | 2025-12-10 | Product Team | Initial PRD |
 | 1.1 | 2025-12-23 | Product Team | Added Section 14: Product Admin Actions (View/Edit/Delete) |
+| 1.2 | 2025-12-23 | Product Team | Simplified Section 14: Single editable page (no separate view/edit modes) |
 
 **Approval:**
 
